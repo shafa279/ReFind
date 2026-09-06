@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report Item - ReFind</title>
+</head>
+<body>
+
+    <h1>Report an Item</h1>
+
+    <form method="POST">
+
+        <label>Lost or Found:</label>
+        <select name="item_type" required>
+            <option value="Lost">Lost</option>
+            <option value="Found">Found</option>
+        </select>
+
+        <br><br>
+
+        <label>Item Name:</label>
+        <input type="text" name="item_name" required>
+
+        <br><br>
+
+        <label>Category:</label>
+        <input type="text" name="category" required>
+
+        <br><br>
+
+        <label>Location:</label>
+        <input type="text" name="location" required>
+
+        <br><br>
+
+        <label>Date:</label>
+        <input type="date" name="date" required>
+
+        <br><br>
+
+        <label>Approximate Time:</label>
+        <input type="time" name="time">
+
+        <br><br>
+
+        <label>Public Details 🌐:</label>
+        <p>Enter information that is safe for other users to see. Avoid unique identifying details.</p>
+        <textarea name="public_details"
+            placeholder="Example: Lost near the college library"></textarea>
+
+        <br><br>
+
+        <label>Private Details 🔒:</label>
+        <p>Enter details only the real owner is likely to know. These details will be kept private and used to verify ownership.</p>
+        <textarea name="private_details"
+            placeholder="Example: Has a small sticker on the bottom"></textarea>
+
+        <br><br>
+
+        <button type="submit">Submit Report</button>
+
+    </form>
+
+</body>
+</html>

@@ -2,3 +2,7 @@ __pycache__/
 *.pyc
 database/*.db
 uploads/*
+frontend/.dart_tool/
+frontend/.idea/
+frontend/build/
+*.iml

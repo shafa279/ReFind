@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../report/report_item_screen.dart';
+import '../my_reports/my_reports_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -53,6 +55,7 @@ class HomeScreen extends StatelessWidget {
                     const Spacer(),
 
                     if (!isMobile) ...[
+                      // HOME
                       TextButton(
                         onPressed: () {},
                         child: const Text(
@@ -63,9 +66,19 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 12),
+
+                      // MY REPORTS
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MyReportsScreen(),
+                            ),
+                          );
+                        },
                         child: const Text(
                           'My Reports',
                           style: TextStyle(
@@ -73,7 +86,10 @@ class HomeScreen extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       const SizedBox(width: 20),
+
+                      // LOGIN
                       OutlinedButton(
                         onPressed: () {},
                         style: OutlinedButton.styleFrom(
@@ -196,8 +212,16 @@ class HomeScreen extends StatelessWidget {
                       runSpacing: 14,
                       alignment: WrapAlignment.center,
                       children: [
+                        // I LOST SOMETHING
                         ElevatedButton.icon(
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ReportItemScreen(),
+                              ),
+                            );
+                          },
                           icon: const Icon(Icons.search_rounded),
                           label: const Text('I Lost Something'),
                           style: ElevatedButton.styleFrom(
@@ -212,9 +236,20 @@ class HomeScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+
+                        // I FOUND SOMETHING
                         OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.volunteer_activism_rounded),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ReportItemScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.volunteer_activism_rounded,
+                          ),
                           label: const Text('I Found Something'),
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF171A2B),
@@ -308,7 +343,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
 
 // ───────── FEATURE CARD ─────────
 

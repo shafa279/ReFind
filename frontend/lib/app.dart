@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'screens/home/home_screen.dart';
+import 'screens/report/report_item_screen.dart';
+import 'screens/matches/matches_screen.dart';
+import 'screens/item_details/item_details_screen.dart';
+import 'screens/my_reports/my_reports_screen.dart';
+import 'screens/admin/admin_dashboard_screen.dart';
 
 class ReFindApp extends StatelessWidget {
   const ReFindApp({super.key});
@@ -9,7 +15,17 @@ class ReFindApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ReFind',
-      home: const HomeScreen(),
+
+      initialRoute: '/',
+
+      routes: {
+        '/': (context) => const HomeScreen(),
+        '/report': (context) => const ReportItemScreen(),
+        '/matches': (context) => const MatchesScreen(),
+        '/item-details': (context) => const ItemDetailsScreen(),
+        '/my-reports': (context) => const MyReportsScreen(),
+        '/admin': (context) => const AdminDashboardScreen(),
+      },
     );
   }
 }

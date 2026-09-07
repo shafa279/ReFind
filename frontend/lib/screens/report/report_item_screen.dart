@@ -139,7 +139,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 32),
 
-                // BASIC INFORMATION CARD
+                // BASIC INFORMATION
                 _sectionCard(
                   title: 'Basic Information',
                   icon: Icons.inventory_2_outlined,
@@ -199,7 +199,8 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                               text: selectedTime,
                               onTap: () {
                                 setState(() {
-                                  selectedTime = 'Morning / Afternoon / Evening';
+                                  selectedTime =
+                                      'Morning / Afternoon / Evening';
                                 });
                               },
                             ),
@@ -259,7 +260,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                               ),
                             );
                           },
-                          icon: const Icon(Icons.add_photo_alternate_outlined),
+                          icon: const Icon(
+                            Icons.add_photo_alternate_outlined,
+                          ),
                           label: const Text('Choose Photo'),
                         ),
                       ],
@@ -408,7 +411,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
               title,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: selected ? Colors.white : const Color(0xFF171A2B),
+                color: selected
+                    ? Colors.white
+                    : const Color(0xFF171A2B),
               ),
             ),
           ],

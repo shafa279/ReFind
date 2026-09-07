@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+
 import '../report/report_item_screen.dart';
 import '../my_reports/my_reports_screen.dart';
+import '../matches/matches_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -16,7 +18,7 @@ class HomeScreen extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // ───────── NAVIGATION BAR ─────────
+              // NAVIGATION BAR
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isMobile ? 24 : 70,
@@ -24,7 +26,7 @@ class HomeScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // Logo
+                    // LOGO
                     Row(
                       children: [
                         Container(
@@ -69,6 +71,26 @@ class HomeScreen extends StatelessWidget {
 
                       const SizedBox(width: 12),
 
+                      // MATCHES
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MatchesScreen(),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          'Matches',
+                          style: TextStyle(
+                            color: Color(0xFF686B78),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
                       // MY REPORTS
                       TextButton(
                         onPressed: () {
@@ -91,7 +113,9 @@ class HomeScreen extends StatelessWidget {
 
                       // LOGIN
                       OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/login');
+                        },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 22,
@@ -113,6 +137,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                     ] else
+                      // MOBILE MENU
                       IconButton(
                         onPressed: () {},
                         icon: const Icon(Icons.menu_rounded),
@@ -121,7 +146,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // ───────── HERO SECTION ─────────
+              // HERO SECTION
               Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: isMobile ? 24 : 70,
@@ -129,7 +154,6 @@ class HomeScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    // Small badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 16,
@@ -163,7 +187,6 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 28),
 
-                    // Main heading
                     Text(
                       'LOST SOMETHING?\nLET\'S FIND IT.',
                       textAlign: TextAlign.center,
@@ -206,7 +229,6 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(height: 38),
 
-                    // Action buttons
                     Wrap(
                       spacing: 14,
                       runSpacing: 14,
@@ -271,7 +293,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // ───────── FEATURE CARDS ─────────
+              // FEATURE CARDS
               Padding(
                 padding: EdgeInsets.fromLTRB(
                   isMobile ? 24 : 70,
@@ -306,7 +328,7 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
 
-              // ───────── BOTTOM SECTION ─────────
+              // FOOTER
               Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(
@@ -343,8 +365,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-
-// ───────── FEATURE CARD ─────────
 
 class _FeatureCard extends StatelessWidget {
   final IconData icon;

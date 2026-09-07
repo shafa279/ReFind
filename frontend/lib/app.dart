@@ -6,6 +6,7 @@ import 'screens/matches/matches_screen.dart';
 import 'screens/item_details/item_details_screen.dart';
 import 'screens/my_reports/my_reports_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
+import 'screens/login/login_screen.dart';
 
 class ReFindApp extends StatelessWidget {
   const ReFindApp({super.key});
@@ -15,9 +16,7 @@ class ReFindApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ReFind',
-
       initialRoute: '/',
-
       routes: {
         '/': (context) => const HomeScreen(),
         '/report': (context) => const ReportItemScreen(),
@@ -25,6 +24,7 @@ class ReFindApp extends StatelessWidget {
         '/item-details': (context) => const ItemDetailsScreen(),
         '/my-reports': (context) => const MyReportsScreen(),
         '/admin': (context) => const AdminDashboardScreen(),
+        '/login': (context) => const LoginScreen(),
       },
     );
   }

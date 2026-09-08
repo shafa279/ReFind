@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
 
+import '../../widgets/match_card.dart';
 import '../item_details/item_details_screen.dart';
 
 class MatchesScreen extends StatelessWidget {
@@ -7,72 +9,64 @@ class MatchesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 800;
+    final matches = [
+      _MatchData(
+        itemName: 'Black Wireless Headphones',
+        category: 'Electronics',
+        location: 'Central Library',
+        date: '5 September 2026',
+        matchPercentage: 94,
+      ),
+      _MatchData(
+        itemName: 'Wireless Headphones',
+        category: 'Electronics',
+        location: 'Student Block',
+        date: '4 September 2026',
+        matchPercentage: 81,
+      ),
+      _MatchData(
+        itemName: 'Black Bluetooth Headset',
+        category: 'Electronics',
+        location: 'Cafeteria',
+        date: '3 September 2026',
+        matchPercentage: 68,
+      ),
+    ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFFF7F8FC),
-        elevation: 0,
-        leading: IconButton(
-          onPressed: () {
-            Navigator.pop(context);
-          },
-          icon: const Icon(
-            Icons.arrow_back_rounded,
-            color: Color(0xFF171A2B),
-          ),
-        ),
-        title: const Text(
-          'Potential Matches',
-          style: TextStyle(
-            color: Color(0xFF171A2B),
-            fontWeight: FontWeight.w800,
-          ),
-        ),
+        title: const Text('Potential Matches'),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(
-          horizontal: isMobile ? 20 : 70,
-          vertical: 30,
-        ),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              maxWidth: 1100,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ListView(
               children: [
-                const Text(
-                  'Items that may match your report',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF171A2B),
-                  ),
+                Text(
+                  'Potential Matches',
+                  style: Theme.of(context).textTheme.headlineMedium,
                 ),
-
-                const SizedBox(height: 10),
-
+                const SizedBox(height: 8),
                 const Text(
-                  'Our system found these items as possible matches.',
+                  'Possible matches identified by the system based on the information provided in your report.',
                   style: TextStyle(
                     fontSize: 15,
                     color: Color(0xFF686B78),
+                    height: 1.5,
                   ),
                 ),
+                const SizedBox(height: 20),
 
-                const SizedBox(height: 25),
-
-                // IMPORTANT NOTICE
                 Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEDEBFF),
-                    borderRadius: BorderRadius.circular(16),
+                    color: const Color(0xFFF7F5FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFE4DDFB),
+                    ),
                   ),
                   child: const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,12 +78,11 @@ class MatchesScreen extends StatelessWidget {
                       SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'These are potential matches, not proof of ownership. '
-                          'Private details are kept hidden and can be used during verification.',
+                          'These are potential matches, not proof of ownership. Private identifying details are kept hidden and can be used during verification.',
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13,
                             height: 1.5,
-                            color: Color(0xFF3F3A63),
+                            color: Color(0xFF6045D8),
                           ),
                         ),
                       ),
@@ -97,58 +90,40 @@ class MatchesScreen extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 24),
 
-                _MatchCard(
-                  itemName: 'Black Wireless Headphones',
-                  category: 'Electronics',
-                  location: 'Central Library',
-                  date: '5 September 2026',
-                  confidence: '94%',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ItemDetailsScreen(),
-                      ),
-                    );
-                  },
+                ...matches.map(
+                  (match) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: MatchCard(
+                      itemName: match.itemName,
+                      category: match.category,
+                      location: match.location,
+                      date: match.date,
+                      matchPercentage: match.matchPercentage,
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ItemDetailsScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
                 ),
 
-                const SizedBox(height: 18),
+                const SizedBox(height: 8),
 
-                _MatchCard(
-                  itemName: 'Wireless Headphones',
-                  category: 'Electronics',
-                  location: 'Student Block',
-                  date: '4 September 2026',
-                  confidence: '81%',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ItemDetailsScreen(),
-                      ),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 18),
-
-                _MatchCard(
-                  itemName: 'Black Bluetooth Headset',
-                  category: 'Electronics',
-                  location: 'Cafeteria',
-                  date: '3 September 2026',
-                  confidence: '68%',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const ItemDetailsScreen(),
-                      ),
-                    );
-                  },
+                const Center(
+                  child: Text(
+                    'Private identifying details are never shown in public match cards.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF686B78),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -159,152 +134,18 @@ class MatchesScreen extends StatelessWidget {
   }
 }
 
-class _MatchCard extends StatelessWidget {
+class _MatchData {
   final String itemName;
   final String category;
   final String location;
   final String date;
-  final String confidence;
-  final VoidCallback onPressed;
+  final int matchPercentage;
 
-  const _MatchCard({
+  const _MatchData({
     required this.itemName,
     required this.category,
     required this.location,
     required this.date,
-    required this.confidence,
-    required this.onPressed,
+    required this.matchPercentage,
   });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE8E9F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F1F6),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.headphones_rounded,
-                  color: Color(0xFF6C4EFF),
-                  size: 28,
-                ),
-              ),
-
-              const SizedBox(width: 16),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      itemName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF171A2B),
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      '$category • $location',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF686B78),
-                      ),
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      date,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF8A8D99),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE8F8EF),
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                child: Text(
-                  confidence,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF237A4B),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 20),
-
-          const Text(
-            'Potential match based on the available report information.',
-            style: TextStyle(
-              fontSize: 14,
-              height: 1.5,
-              color: Color(0xFF686B78),
-            ),
-          ),
-
-          const SizedBox(height: 18),
-
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onPressed,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF171A2B),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 15,
-                ),
-                side: const BorderSide(
-                  color: Color(0xFFD9DBE5),
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'View Potential Match',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }

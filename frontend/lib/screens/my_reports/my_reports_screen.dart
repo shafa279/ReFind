@@ -1,113 +1,121 @@
 import 'package:flutter/material.dart';
 
+import '../item_details/item_details_screen.dart';
+
 class MyReportsScreen extends StatelessWidget {
   const MyReportsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final isMobile = width < 800;
+    final reports = [
+      _ReportData(
+        itemName: 'Black Wireless Headphones',
+        type: 'Lost',
+        category: 'Electronics',
+        location: 'Central Library',
+        date: '5 September 2026',
+        status: 'Potential Match',
+      ),
+      _ReportData(
+        itemName: 'Blue Notebook',
+        type: 'Lost',
+        category: 'Stationery',
+        location: 'Classroom Block',
+        date: '2 September 2026',
+        status: 'Searching',
+      ),
+      _ReportData(
+        itemName: 'Black Water Bottle',
+        type: 'Found',
+        category: 'Other',
+        location: 'Cafeteria',
+        date: '28 August 2026',
+        status: 'Verification Pending',
+      ),
+      _ReportData(
+        itemName: 'Calculator',
+        type: 'Lost',
+        category: 'Electronics',
+        location: 'Science Block',
+        date: '20 August 2026',
+        status: 'Resolved',
+      ),
+    ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(
-            horizontal: isMobile ? 22 : 70,
-            vertical: 28,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextButton.icon(
-                onPressed: () => Navigator.pop(context),
-                icon: const Icon(Icons.arrow_back_rounded),
-                label: const Text('Back'),
-              ),
-
-              const SizedBox(height: 25),
-
-              const Text(
-                'My Reports',
-                style: TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF171A2B),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              const Text(
-                'Track the items you have reported and their current status.',
-                style: TextStyle(
-                  fontSize: 16,
-                  height: 1.5,
-                  color: Color(0xFF686B78),
-                ),
-              ),
-
-              const SizedBox(height: 30),
-
-              const _ReportCard(
-                itemName: 'Black Wireless Headphones',
-                type: 'Lost',
-                category: 'Electronics',
-                location: 'Central Library',
-                date: '5 September 2026',
-                status: 'Potential Match',
-                statusColor: Color(0xFF6C4EFF),
-              ),
-
-              const SizedBox(height: 16),
-
-              const _ReportCard(
-                itemName: 'Blue Notebook',
-                type: 'Lost',
-                category: 'Stationery',
-                location: 'Classroom Block',
-                date: '2 September 2026',
-                status: 'Searching',
-                statusColor: Color(0xFFB06A00),
-              ),
-
-              const SizedBox(height: 16),
-
-              const _ReportCard(
-                itemName: 'Black Water Bottle',
-                type: 'Found',
-                category: 'Other',
-                location: 'Cafeteria',
-                date: '28 August 2026',
-                status: 'Verification Pending',
-                statusColor: Color(0xFF2878A6),
-              ),
-
-              const SizedBox(height: 16),
-
-              const _ReportCard(
-                itemName: 'Calculator',
-                type: 'Lost',
-                category: 'Electronics',
-                location: 'Science Block',
-                date: '20 August 2026',
-                status: 'Resolved',
-                statusColor: Color(0xFF237A4B),
-              ),
-
-              const SizedBox(height: 30),
-
-              Center(
-                child: Text(
-                  'Private identifying details are never displayed here.',
-                  textAlign: TextAlign.center,
+      backgroundColor: const Color(0xFFF7F9FC),
+      appBar: AppBar(
+        title: const Text(
+          'My Reports',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.white,
+        foregroundColor: const Color(0xFF172033),
+        elevation: 0,
+      ),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: ListView(
+              children: [
+                const Text(
+                  'My Reports',
                   style: TextStyle(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    fontSize: 13,
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF172033),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 8),
+                const Text(
+                  'Track the items you have reported and their current status.',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Color(0xFF667085),
+                  ),
+                ),
+                const SizedBox(height: 28),
+
+                ...reports.map(
+                  (report) => _ReportCard(report: report),
+                ),
+
+                const SizedBox(height: 20),
+
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F4FF),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFFD9E2FF),
+                    ),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.lock_outline,
+                        color: Color(0xFF3155D9),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Your private identifying details are never displayed in public reports or match cards. They are only used during ownership verification.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: Color(0xFF475467),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -116,35 +124,30 @@ class MyReportsScreen extends StatelessWidget {
 }
 
 class _ReportCard extends StatelessWidget {
-  final String itemName;
-  final String type;
-  final String category;
-  final String location;
-  final String date;
-  final String status;
-  final Color statusColor;
+  final _ReportData report;
 
   const _ReportCard({
-    required this.itemName,
-    required this.type,
-    required this.category,
-    required this.location,
-    required this.date,
-    required this.status,
-    required this.statusColor,
+    required this.report,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFE8E9F0),
+          color: const Color(0xFFE4E7EC),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,100 +155,40 @@ class _ReportCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEDEBFF),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(
-                  Icons.inventory_2_outlined,
-                  color: Color(0xFF6C4EFF),
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      itemName,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF171A2B),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      '$type • $category',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF686B78),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(30),
-                ),
                 child: Text(
-                  status,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
+                  report.itemName,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF172033),
                   ),
                 ),
               ),
+              _StatusBadge(status: report.status),
             ],
           ),
+          const SizedBox(height: 14),
 
-          const SizedBox(height: 20),
-
-          Row(
+          Wrap(
+            spacing: 20,
+            runSpacing: 10,
             children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 18,
-                color: Color(0xFF686B78),
+              _InfoItem(
+                icon: Icons.swap_horiz,
+                label: report.type,
               ),
-              const SizedBox(width: 7),
-              Text(
-                location,
-                style: const TextStyle(
-                  color: Color(0xFF686B78),
-                ),
+              _InfoItem(
+                icon: Icons.category_outlined,
+                label: report.category,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 9),
-
-          Row(
-            children: [
-              const Icon(
-                Icons.calendar_today_outlined,
-                size: 17,
-                color: Color(0xFF686B78),
+              _InfoItem(
+                icon: Icons.location_on_outlined,
+                label: report.location,
               ),
-              const SizedBox(width: 7),
-              Text(
-                date,
-                style: const TextStyle(
-                  color: Color(0xFF686B78),
-                ),
+              _InfoItem(
+                icon: Icons.calendar_today_outlined,
+                label: report.date,
               ),
             ],
           ),
@@ -254,22 +197,25 @@ class _ReportCard extends StatelessWidget {
 
           SizedBox(
             width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () {},
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ItemDetailsScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.visibility_outlined),
+              label: const Text('View Report'),
               style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
+                foregroundColor: const Color(0xFF3155D9),
                 side: const BorderSide(
-                  color: Color(0xFFD9DBE5),
+                  color: Color(0xFF3155D9),
                 ),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: const Text(
-                'View Report',
-                style: TextStyle(
-                  color: Color(0xFF171A2B),
-                  fontWeight: FontWeight.w700,
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -278,4 +224,84 @@ class _ReportCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          icon,
+          size: 17,
+          color: const Color(0xFF667085),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 13,
+            color: Color(0xFF475467),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+
+  const _StatusBadge({
+    required this.status,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0F4FF),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+          color: Color(0xFF3155D9),
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportData {
+  final String itemName;
+  final String type;
+  final String category;
+  final String location;
+  final String date;
+  final String status;
+
+  const _ReportData({
+    required this.itemName,
+    required this.type,
+    required this.category,
+    required this.location,
+    required this.date,
+    required this.status,
+  });
 }

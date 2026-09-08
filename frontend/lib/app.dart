@@ -1,5 +1,7 @@
+
 import 'package:flutter/material.dart';
 
+import 'theme/app_theme.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/report/report_item_screen.dart';
 import 'screens/matches/matches_screen.dart';
@@ -16,6 +18,10 @@ class ReFindApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'ReFind',
+
+      // ReFind's global theme
+      theme: AppTheme.lightTheme,
+
       initialRoute: '/',
       routes: {
         '/': (context) => const HomeScreen(),

@@ -1,25 +1,45 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ReportItemScreen extends StatefulWidget {
-  const ReportItemScreen({super.key});
+  final bool initialIsLost;
+
+  const ReportItemScreen({
+    super.key,
+    this.initialIsLost = true,
+  });
 
   @override
   State<ReportItemScreen> createState() => _ReportItemScreenState();
 }
 
 class _ReportItemScreenState extends State<ReportItemScreen> {
-  bool isLost = true;
+  late bool _isLost;
 
-  final itemNameController = TextEditingController();
-  final locationController = TextEditingController();
-  final publicDetailsController = TextEditingController();
-  final privateDetailsController = TextEditingController();
+  final TextEditingController _itemNameController =
+      TextEditingController();
 
-  String selectedCategory = 'Electronics';
-  String selectedDate = 'Select date';
-  String selectedTime = 'Select approximate time';
+  final TextEditingController _locationController =
+      TextEditingController();
 
-  final categories = [
+  final TextEditingController _publicDetailsController =
+      TextEditingController();
+
+  final TextEditingController _privateDetailsController =
+      TextEditingController();
+
+  String _selectedCategory = 'Electronics';
+  String _selectedDate = 'Select date';
+  String _selectedTime = 'Morning';
+
+  Uint8List? _selectedImage;
+  String? _selectedImageName;
+
+  final ImagePicker _imagePicker = ImagePicker();
+
+  final List<String> _categories = [
     'Electronics',
     'Books',
     'ID / Cards',
@@ -30,236 +50,387 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _isLost = widget.initialIsLost;
+  }
+
+  @override
   void dispose() {
-    itemNameController.dispose();
-    locationController.dispose();
-    publicDetailsController.dispose();
-    privateDetailsController.dispose();
+    _itemNameController.dispose();
+    _locationController.dispose();
+    _publicDetailsController.dispose();
+    _privateDetailsController.dispose();
     super.dispose();
   }
 
-  Future<void> pickDate() async {
-    final date = await showDatePicker(
+  Future<void> _selectDate() async {
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
       initialDate: DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2035),
     );
 
-    if (date != null) {
+    if (pickedDate != null) {
       setState(() {
-        selectedDate = '${date.day}/${date.month}/${date.year}';
+        _selectedDate =
+            '${pickedDate.day} ${_monthName(pickedDate.month)} ${pickedDate.year}';
       });
     }
   }
 
+  String _monthName(int month) {
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+
+    return months[month - 1];
+  }
+
+  Future<void> _choosePhoto() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) {
+        return;
+      }
+
+      final Uint8List imageBytes = await pickedFile.readAsBytes();
+
+      setState(() {
+        _selectedImage = imageBytes;
+        _selectedImageName = pickedFile.name;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not select the photo. Please try again.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _removePhoto() {
+    setState(() {
+      _selectedImage = null;
+      _selectedImageName = null;
+    });
+  }
+
+  void _submitReport() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Report saved locally for now. Backend connection comes later.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    final isMobile = width < 800;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 22 : 70,
-              vertical: 28,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F8FC),
+        elevation: 0,
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF171A2B),
+          ),
+        ),
+        title: const Text(
+          'Report an Item',
+          style: TextStyle(
+            color: Color(0xFF171A2B),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        padding: EdgeInsets.symmetric(
+          horizontal: isMobile ? 20 : 70,
+          vertical: 30,
+        ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 850,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // BACK BUTTON
-                TextButton.icon(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                  label: const Text('Back'),
-                ),
-
-                const SizedBox(height: 25),
-
-                // HEADER
                 const Text(
-                  'Report an Item',
+                  'Tell us what happened.',
                   style: TextStyle(
-                    fontSize: 38,
+                    fontSize: 32,
                     fontWeight: FontWeight.w900,
                     color: Color(0xFF171A2B),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 const Text(
-                  'Tell us about the item so ReFind can help connect it '
-                  'with its possible owner.',
+                  'Provide as much useful information as you can.',
                   style: TextStyle(
-                    fontSize: 16,
-                    height: 1.5,
+                    fontSize: 15,
                     color: Color(0xFF686B78),
                   ),
                 ),
+                const SizedBox(height: 30),
 
-                const SizedBox(height: 35),
-
-                // LOST / FOUND
-                const Text(
-                  'What happened?',
-                  style: _sectionTitleStyle,
-                ),
-
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: _choiceButton(
-                        title: 'I Lost It',
-                        icon: Icons.search_rounded,
-                        selected: isLost,
-                        onTap: () {
-                          setState(() => isLost = true);
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: _choiceButton(
-                        title: 'I Found It',
-                        icon: Icons.volunteer_activism_rounded,
-                        selected: !isLost,
-                        onTap: () {
-                          setState(() => isLost = false);
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 32),
-
-                // BASIC INFORMATION
-                _sectionCard(
-                  title: 'Basic Information',
-                  icon: Icons.inventory_2_outlined,
-                  child: Column(
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEDEEF4),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
                     children: [
-                      _textField(
-                        controller: itemNameController,
-                        label: 'Item name',
-                        hint: 'e.g. Black Samsung Galaxy phone',
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      DropdownButtonFormField<String>(
-                        initialValue: selectedCategory,
-                        decoration: _inputDecoration('Category'),
-                        items: categories
-                            .map(
-                              (category) => DropdownMenuItem(
-                                value: category,
-                                child: Text(category),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value != null) {
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
                             setState(() {
-                              selectedCategory = value;
+                              _isLost = true;
                             });
-                          }
-                        },
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      _textField(
-                        controller: locationController,
-                        label: 'Location',
-                        hint: 'e.g. Library, Block A',
-                      ),
-
-                      const SizedBox(height: 18),
-
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _dateButton(
-                              icon: Icons.calendar_today_outlined,
-                              text: selectedDate,
-                              onTap: pickDate,
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 15,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _isLost
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'I Lost Something',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: _isLost
+                                    ? const Color(0xFF171A2B)
+                                    : const Color(0xFF686B78),
+                              ),
                             ),
                           ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: _dateButton(
-                              icon: Icons.access_time_rounded,
-                              text: selectedTime,
-                              onTap: () {
-                                setState(() {
-                                  selectedTime =
-                                      'Morning / Afternoon / Evening';
-                                });
-                              },
+                        ),
+                      ),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isLost = false;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 15,
+                            ),
+                            decoration: BoxDecoration(
+                              color: !_isLost
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                              'I Found Something',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: !_isLost
+                                    ? const Color(0xFF171A2B)
+                                    : const Color(0xFF686B78),
+                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 25),
 
-                // PHOTO
-                _sectionCard(
+                const _SectionTitle(
+                  title: 'Basic Information',
+                  icon: Icons.info_outline_rounded,
+                ),
+
+                const SizedBox(height: 15),
+
+                const _InputLabel(label: 'Item Name'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _itemNameController,
+                  decoration: _inputDecoration(
+                    hint: 'e.g. Black wireless headphones',
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                const _InputLabel(label: 'Category'),
+                const SizedBox(height: 8),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedCategory,
+                  decoration: _inputDecoration(),
+                  items: _categories.map((category) {
+                    return DropdownMenuItem(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedCategory = value;
+                      });
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 20),
+
+                const _InputLabel(label: 'Location'),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _locationController,
+                  decoration: _inputDecoration(
+                    hint: 'e.g. Central Library',
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                const _InputLabel(label: 'Date'),
+                const SizedBox(height: 8),
+
+                InkWell(
+                  onTap: _selectDate,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InputDecorator(
+                    decoration: _inputDecoration(
+                      suffixIcon: const Icon(
+                        Icons.calendar_today_outlined,
+                      ),
+                    ),
+                    child: Text(
+                      _selectedDate,
+                      style: TextStyle(
+                        color: _selectedDate == 'Select date'
+                            ? const Color(0xFF9A9CA8)
+                            : const Color(0xFF171A2B),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                const _InputLabel(label: 'Approximate Time'),
+                const SizedBox(height: 8),
+
+                DropdownButtonFormField<String>(
+                  initialValue: _selectedTime,
+                  decoration: _inputDecoration(),
+                  items: const [
+                    DropdownMenuItem(
+                      value: 'Morning',
+                      child: Text('Morning'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Afternoon',
+                      child: Text('Afternoon'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'Evening',
+                      child: Text('Evening'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTime = value;
+                      });
+                    }
+                  },
+                ),
+
+                const SizedBox(height: 25),
+
+                const _SectionTitle(
                   title: 'Photo',
-                  icon: Icons.photo_camera_outlined,
-                  child: Container(
+                  icon: Icons.photo_outlined,
+                ),
+
+                const SizedBox(height: 15),
+
+                if (_selectedImage == null)
+                  Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 35),
+                    padding: const EdgeInsets.all(30),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF7F8FC),
-                      borderRadius: BorderRadius.circular(16),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
                       border: Border.all(
-                        color: const Color(0xFFDCDDE6),
+                        color: const Color(0xFFE8E9F0),
                       ),
                     ),
                     child: Column(
                       children: [
                         const Icon(
                           Icons.cloud_upload_outlined,
-                          size: 42,
+                          size: 40,
                           color: Color(0xFF6C4EFF),
                         ),
                         const SizedBox(height: 12),
                         const Text(
                           'Add a photo of the item',
                           style: TextStyle(
+                            fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            fontSize: 16,
+                            color: Color(0xFF171A2B),
                           ),
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'A clear photo can help with matching.',
+                          'Choose an image from your computer.',
                           style: TextStyle(
-                            color: Color(0xFF686B78),
+                            fontSize: 13,
+                            color: Color(0xFF8A8D99),
                           ),
                         ),
                         const SizedBox(height: 18),
                         OutlinedButton.icon(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Photo upload will be connected later.',
-                                ),
-                              ),
-                            );
-                          },
+                          onPressed: _choosePhoto,
                           icon: const Icon(
                             Icons.add_photo_alternate_outlined,
                           ),
@@ -267,75 +438,145 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                         ),
                       ],
                     ),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // PUBLIC DETAILS
-                _sectionCard(
-                  title: 'Public Details 🌐',
-                  icon: Icons.public_rounded,
-                  subtitle:
-                      'Information that can be safely shown to other users.',
-                  child: _textField(
-                    controller: publicDetailsController,
-                    label: 'What others can see',
-                    hint:
-                        'Add general details about the item without revealing unique identifiers.',
-                    maxLines: 5,
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // PRIVATE DETAILS
-                _sectionCard(
-                  title: 'Private Details 🔒',
-                  icon: Icons.lock_outline_rounded,
-                  subtitle:
-                      'Details kept private and used to help verify ownership.',
-                  child: Column(
-                    children: [
-                      _textField(
-                        controller: privateDetailsController,
-                        label: 'Ownership verification details',
-                        hint:
-                            'Colour, specific design, stickers, scratches, '
-                            'engravings, unique marks, or other identifying details.',
-                        maxLines: 6,
+                  )
+                else
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: const Color(0xFFE8E9F0),
                       ),
-
-                      const SizedBox(height: 12),
-
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEDEBFF),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
                           borderRadius: BorderRadius.circular(12),
+                          child: Image.memory(
+                            _selectedImage!,
+                            width: double.infinity,
+                            height: 300,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        child: const Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        const SizedBox(height: 12),
+                        Row(
                           children: [
-                            Icon(
-                              Icons.shield_outlined,
-                              color: Color(0xFF6C4EFF),
+                            const Icon(
+                              Icons.image_outlined,
                               size: 20,
+                              color: Color(0xFF686B78),
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'Keep unique details here. These details '
-                                'will not be displayed publicly and can '
-                                'help verify who actually owns the item.',
-                                style: TextStyle(
+                                _selectedImageName ?? 'Selected photo',
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
                                   fontSize: 13,
-                                  height: 1.45,
-                                  color: Color(0xFF4D4968),
+                                  color: Color(0xFF686B78),
                                 ),
                               ),
                             ),
+                            TextButton(
+                              onPressed: _choosePhoto,
+                              child: const Text('Change'),
+                            ),
+                            TextButton(
+                              onPressed: _removePhoto,
+                              child: const Text('Remove'),
+                            ),
                           ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 30),
+
+                const _SectionTitle(
+                  title: 'Public Details 🌐',
+                  icon: Icons.public_rounded,
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Information that can be safely shown to other users.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF686B78),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                TextField(
+                  controller: _publicDetailsController,
+                  maxLines: 4,
+                  decoration: _inputDecoration(
+                    hint:
+                        'Describe information that is safe to show publicly.',
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                const _SectionTitle(
+                  title: 'Private Details 🔒',
+                  icon: Icons.lock_outline_rounded,
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Details kept private and used to help verify ownership.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF686B78),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                TextField(
+                  controller: _privateDetailsController,
+                  maxLines: 5,
+                  decoration: _inputDecoration(
+                    hint:
+                        'Colour, stickers, scratches, engravings, unique marks, etc.',
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF8E7),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.shield_outlined,
+                        color: Color(0xFF8A6A00),
+                      ),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Private details will not be displayed publicly. '
+                          'They are intended to help verify ownership.',
+                          style: TextStyle(
+                            fontSize: 13,
+                            height: 1.5,
+                            color: Color(0xFF6B5700),
+                          ),
                         ),
                       ),
                     ],
@@ -344,33 +585,33 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 35),
 
-                // SUBMIT
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Report saved locally for now. Backend connection comes later.',
-                          ),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.arrow_forward_rounded),
-                    label: const Text('Submit Report'),
+                  child: ElevatedButton(
+                    onPressed: _submitReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF171A2B),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 19),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 18,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: Text(
+                      _isLost
+                          ? 'Submit Lost Report'
+                          : 'Submit Found Report',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 50),
               ],
             ),
           ),
@@ -379,192 +620,86 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
     );
   }
 
-  Widget _choiceButton({
-    required String title,
-    required IconData icon,
-    required bool selected,
-    required VoidCallback onTap,
+  InputDecoration _inputDecoration({
+    String? hint,
+    Widget? suffixIcon,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 17),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFF171A2B) : Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected
-                ? const Color(0xFF171A2B)
-                : const Color(0xFFDCDDE6),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: selected ? Colors.white : const Color(0xFF171A2B),
-            ),
-            const SizedBox(width: 9),
-            Text(
-              title,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                color: selected
-                    ? Colors.white
-                    : const Color(0xFF171A2B),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionCard({
-    required String title,
-    required IconData icon,
-    required Widget child,
-    String? subtitle,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFFE8E9F0),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                icon,
-                color: const Color(0xFF6C4EFF),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 19,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF171A2B),
-                ),
-              ),
-            ],
-          ),
-
-          if (subtitle != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                color: Color(0xFF686B78),
-                fontSize: 13,
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 22),
-          child,
-        ],
-      ),
-    );
-  }
-
-  Widget _textField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    int maxLines = 1,
-  }) {
-    return TextField(
-      controller: controller,
-      maxLines: maxLines,
-      decoration: _inputDecoration(label).copyWith(
-        hintText: hint,
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration(String label) {
     return InputDecoration(
-      labelText: label,
+      hintText: hint,
+      suffixIcon: suffixIcon,
       filled: true,
-      fillColor: const Color(0xFFF9F9FC),
+      fillColor: Colors.white,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
-          color: Color(0xFFDCDDE6),
+          color: Color(0xFFE8E9F0),
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
-          color: Color(0xFFDCDDE6),
+          color: Color(0xFFE8E9F0),
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(
           color: Color(0xFF6C4EFF),
-          width: 2,
-        ),
-      ),
-    );
-  }
-
-  Widget _dateButton({
-    required IconData icon,
-    required String text,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: 15,
-          vertical: 17,
-        ),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9F9FC),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: const Color(0xFFDCDDE6),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: const Color(0xFF6C4EFF),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                text,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF686B78),
-                ),
-              ),
-            ),
-          ],
+          width: 1.5,
         ),
       ),
     );
   }
 }
 
-const _sectionTitleStyle = TextStyle(
-  fontSize: 18,
-  fontWeight: FontWeight.w800,
-  color: Color(0xFF171A2B),
-);
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final IconData icon;
+
+  const _SectionTitle({
+    required this.title,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 20,
+          color: const Color(0xFF6C4EFF),
+        ),
+        const SizedBox(width: 9),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF171A2B),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InputLabel extends StatelessWidget {
+  final String label;
+
+  const _InputLabel({
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        color: Color(0xFF171A2B),
+      ),
+    );
+  }
+}

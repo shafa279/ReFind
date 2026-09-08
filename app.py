@@ -1,10 +1,14 @@
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 from backend.database import create_tables, get_db_connection
 from backend.matching import find_matches
 from werkzeug.utils import secure_filename
 import os
 
 app = Flask(__name__)
+
+# Allow the Flutter Web frontend to communicate with Flask
+CORS(app)
 
 UPLOAD_FOLDER = "uploads"
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -14,10 +18,76 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 create_tables()
 
 
+# =========================
+# HOME
+# =========================
+
 @app.route("/")
 def home():
     return "Welcome to ReFind!"
 
+
+# =========================
+# LOGIN / AUTHENTICATION
+# =========================
+
+@app.route("/api/login", methods=["POST"])
+def login():
+
+    user_id = request.form.get("user_id")
+    password = request.form.get("password")
+
+    if not user_id or not password:
+        return jsonify({
+            "success": False,
+            "message": "College / Student ID and password are required"
+        }), 400
+
+    # Temporary mock college registry for development/testing
+    users = {
+        "TEST001": {
+            "password": "test123",
+            "role": "student"
+        },
+        "TEST002": {
+            "password": "test123",
+            "role": "student"
+        },
+        "TEST003": {
+            "password": "test123",
+            "role": "student"
+        },
+        "ADMIN001": {
+            "password": "admin123",
+            "role": "admin"
+        }
+    }
+
+    user = users.get(user_id)
+
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "Invalid College / Student ID"
+        }), 401
+
+    if user["password"] != password:
+        return jsonify({
+            "success": False,
+            "message": "Incorrect password"
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "message": "Login successful!",
+        "user_id": user_id,
+        "role": user["role"]
+    }), 200
+
+
+# =========================
+# REPORT ITEM - WEB FORM
+# =========================
 
 @app.route("/report", methods=["GET", "POST"])
 def report():
@@ -87,6 +157,10 @@ def report():
 
     return render_template("report.html")
 
+
+# =========================
+# REPORT ITEM - FLUTTER API
+# =========================
 
 @app.route("/api/report", methods=["POST"])
 def api_report():
@@ -181,6 +255,10 @@ def api_report():
     }), 201
 
 
+# =========================
+# MATCHING
+# =========================
+
 @app.route("/api/matches/<int:item_id>", methods=["GET"])
 def get_matches(item_id):
 
@@ -220,6 +298,10 @@ def get_matches(item_id):
     })
 
 
+# =========================
+# CLAIM SYSTEM
+# =========================
+
 @app.route("/api/claim", methods=["POST"])
 def create_claim():
 
@@ -227,6 +309,7 @@ def create_claim():
     claimant_id = request.form.get("claimant_id")
 
     if not item_id or not claimant_id:
+
         return jsonify({
             "success": False,
             "message": "item_id and claimant_id are required"
@@ -244,6 +327,7 @@ def create_claim():
     """, (item_id,)).fetchone()
 
     if not item:
+
         connection.close()
 
         return jsonify({
@@ -252,6 +336,7 @@ def create_claim():
         }), 404
 
     if item["status"] != "Searching":
+
         connection.close()
 
         return jsonify({
@@ -260,6 +345,7 @@ def create_claim():
         }), 400
 
     if not item["reporter_id"]:
+
         connection.close()
 
         return jsonify({
@@ -268,6 +354,7 @@ def create_claim():
         }), 400
 
     if claimant_id == item["reporter_id"]:
+
         connection.close()
 
         return jsonify({
@@ -284,6 +371,7 @@ def create_claim():
     """, (item_id, claimant_id)).fetchone()
 
     if existing_claim:
+
         connection.close()
 
         return jsonify({
@@ -292,7 +380,6 @@ def create_claim():
             "claim_id": existing_claim["id"]
         }), 400
 
-    # CREATE CLAIM
     cursor = connection.execute("""
         INSERT INTO claims (
             item_id,
@@ -309,9 +396,6 @@ def create_claim():
 
     claim_id = cursor.lastrowid
 
-    # CREATE NOTIFICATION FOR ORIGINAL REPORTER
-    notification_message = "Someone has claimed your found item."
-
     connection.execute("""
         INSERT INTO notifications (
             user_id,
@@ -325,7 +409,7 @@ def create_claim():
         item["reporter_id"],
         item_id,
         claim_id,
-        notification_message
+        "Someone has claimed your found item."
     ))
 
     connection.commit()
@@ -341,6 +425,10 @@ def create_claim():
         "status": "Pending"
     }), 201
 
+
+# =========================
+# NOTIFICATIONS
+# =========================
 
 @app.route("/api/notifications/<user_id>", methods=["GET"])
 def get_notifications(user_id):
@@ -366,7 +454,10 @@ def get_notifications(user_id):
     return jsonify({
         "success": True,
         "user_id": user_id,
-        "notifications": [dict(notification) for notification in notifications]
+        "notifications": [
+            dict(notification)
+            for notification in notifications
+        ]
     })
 
 
@@ -381,6 +472,7 @@ def create_verification():
     verification_details = request.form.get("verification_details")
 
     if not claim_id or not verification_details:
+
         return jsonify({
             "success": False,
             "message": "claim_id and verification_details are required"
@@ -400,6 +492,7 @@ def create_verification():
     """, (claim_id,)).fetchone()
 
     if not claim:
+
         connection.close()
 
         return jsonify({
@@ -408,6 +501,7 @@ def create_verification():
         }), 404
 
     if claim["status"] != "Pending":
+
         connection.close()
 
         return jsonify({
@@ -423,6 +517,7 @@ def create_verification():
     """, (claim_id,)).fetchone()
 
     if existing_verification:
+
         connection.close()
 
         return jsonify({
@@ -451,7 +546,6 @@ def create_verification():
 
     verification_id = cursor.lastrowid
 
-    # Notify the original reporter that verification details were submitted
     connection.execute("""
         INSERT INTO notifications (
             user_id,
@@ -483,6 +577,10 @@ def create_verification():
     }), 201
 
 
+# =========================
+# GET VERIFICATION
+# =========================
+
 @app.route("/api/verification/<int:verification_id>", methods=["GET"])
 def get_verification(verification_id):
 
@@ -506,6 +604,7 @@ def get_verification(verification_id):
     connection.close()
 
     if not verification:
+
         return jsonify({
             "success": False,
             "message": "Verification not found"
@@ -517,6 +616,10 @@ def get_verification(verification_id):
     })
 
 
+# =========================
+# REVIEW VERIFICATION
+# =========================
+
 @app.route("/api/verification/<int:verification_id>/review", methods=["POST"])
 def review_verification(verification_id):
 
@@ -524,6 +627,7 @@ def review_verification(verification_id):
     decision = request.form.get("decision")
 
     if not reviewer_id or not decision:
+
         return jsonify({
             "success": False,
             "message": "reviewer_id and decision are required"
@@ -532,6 +636,7 @@ def review_verification(verification_id):
     decision = decision.capitalize()
 
     if decision not in ["Approved", "Rejected"]:
+
         return jsonify({
             "success": False,
             "message": "decision must be Approved or Rejected"
@@ -552,6 +657,7 @@ def review_verification(verification_id):
     """, (verification_id,)).fetchone()
 
     if not verification:
+
         connection.close()
 
         return jsonify({
@@ -560,6 +666,7 @@ def review_verification(verification_id):
         }), 404
 
     if verification["status"] != "Pending":
+
         connection.close()
 
         return jsonify({
@@ -567,8 +674,8 @@ def review_verification(verification_id):
             "message": "This verification has already been reviewed"
         }), 400
 
-    # Only the original reporter can review the verification
     if reviewer_id != verification["reporter_id"]:
+
         connection.close()
 
         return jsonify({
@@ -597,7 +704,6 @@ def review_verification(verification_id):
             WHERE id = ?
         """, (verification["item_id"],))
 
-        # Notify claimant
         connection.execute("""
             INSERT INTO notifications (
                 user_id,
@@ -629,7 +735,6 @@ def review_verification(verification_id):
             WHERE id = ?
         """, (verification["claim_id"],))
 
-        # Notify claimant
         connection.execute("""
             INSERT INTO notifications (
                 user_id,
@@ -659,6 +764,10 @@ def review_verification(verification_id):
     })
 
 
+# =========================
+# ALL ITEMS
+# =========================
+
 @app.route("/items")
 def items():
 
@@ -684,6 +793,10 @@ def items():
 
     return str([dict(item) for item in items])
 
+
+# =========================
+# START SERVER
+# =========================
 
 if __name__ == "__main__":
     app.run(debug=True)

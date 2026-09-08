@@ -3,6 +3,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+
 class ReportItemScreen extends StatefulWidget {
   final bool initialIsLost;
 
@@ -17,6 +20,7 @@ class ReportItemScreen extends StatefulWidget {
 
 class _ReportItemScreenState extends State<ReportItemScreen> {
   late bool _isLost;
+  bool _isSubmitting = false;
 
   final TextEditingController _itemNameController =
       TextEditingController();
@@ -136,14 +140,77 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
     });
   }
 
-  void _submitReport() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Report saved locally for now. Backend connection comes later.',
+  Future<void> _submitReport() async {
+    // Check required fields
+    if (_itemNameController.text.trim().isEmpty ||
+        _locationController.text.trim().isEmpty ||
+        _selectedDate == 'Select date') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please fill in the item name, location, and date.',
+          ),
         ),
-      ),
+      );
+      return;
+    }
+
+    // Make sure a user is logged in
+    if (AuthService.userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please log in before submitting a report.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final result = await ApiService.submitReport(
+      userId: AuthService.userId!,
+      itemType: _isLost ? 'Lost' : 'Found',
+      itemName: _itemNameController.text.trim(),
+      category: _selectedCategory,
+      location: _locationController.text.trim(),
+      date: _selectedDate,
+      time: _selectedTime,
+      publicDetails: _publicDetailsController.text.trim(),
+      privateDetails: _privateDetailsController.text.trim(),
+      imageName: _selectedImageName,
+      imageBytes: _selectedImage,
     );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (result['success'] == true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message'] ?? 'Report submitted successfully!',
+          ),
+        ),
+      );
+
+      // Return to the previous screen after successful submission
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message'] ?? 'Could not submit report.',
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -194,7 +261,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                     color: Color(0xFF171A2B),
                   ),
                 ),
+
                 const SizedBox(height: 10),
+
                 const Text(
                   'Provide as much useful information as you can.',
                   style: TextStyle(
@@ -202,8 +271,10 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                     color: Color(0xFF686B78),
                   ),
                 ),
+
                 const SizedBox(height: 30),
 
+                // LOST / FOUND SELECTOR
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
@@ -286,7 +357,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                 const SizedBox(height: 15),
 
                 const _InputLabel(label: 'Item Name'),
+
                 const SizedBox(height: 8),
+
                 TextField(
                   controller: _itemNameController,
                   decoration: _inputDecoration(
@@ -297,6 +370,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                 const SizedBox(height: 20),
 
                 const _InputLabel(label: 'Category'),
+
                 const SizedBox(height: 8),
 
                 DropdownButtonFormField<String>(
@@ -320,7 +394,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                 const SizedBox(height: 20),
 
                 const _InputLabel(label: 'Location'),
+
                 const SizedBox(height: 8),
+
                 TextField(
                   controller: _locationController,
                   decoration: _inputDecoration(
@@ -331,6 +407,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                 const SizedBox(height: 20),
 
                 const _InputLabel(label: 'Date'),
+
                 const SizedBox(height: 8),
 
                 InkWell(
@@ -356,6 +433,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                 const SizedBox(height: 20),
 
                 const _InputLabel(label: 'Approximate Time'),
+
                 const SizedBox(height: 8),
 
                 DropdownButtonFormField<String>(
@@ -386,6 +464,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 25),
 
+                // PHOTO
                 const _SectionTitle(
                   title: 'Photo',
                   icon: Icons.photo_outlined,
@@ -411,7 +490,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                           size: 40,
                           color: Color(0xFF6C4EFF),
                         ),
+
                         const SizedBox(height: 12),
+
                         const Text(
                           'Add a photo of the item',
                           style: TextStyle(
@@ -420,7 +501,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                             color: Color(0xFF171A2B),
                           ),
                         ),
+
                         const SizedBox(height: 6),
+
                         const Text(
                           'Choose an image from your computer.',
                           style: TextStyle(
@@ -428,7 +511,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                             color: Color(0xFF8A8D99),
                           ),
                         ),
+
                         const SizedBox(height: 18),
+
                         OutlinedButton.icon(
                           onPressed: _choosePhoto,
                           icon: const Icon(
@@ -462,7 +547,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                             fit: BoxFit.cover,
                           ),
                         ),
+
                         const SizedBox(height: 12),
+
                         Row(
                           children: [
                             const Icon(
@@ -470,7 +557,9 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                               size: 20,
                               color: Color(0xFF686B78),
                             ),
+
                             const SizedBox(width: 8),
+
                             Expanded(
                               child: Text(
                                 _selectedImageName ?? 'Selected photo',
@@ -481,10 +570,12 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                                 ),
                               ),
                             ),
+
                             TextButton(
                               onPressed: _choosePhoto,
                               child: const Text('Change'),
                             ),
+
                             TextButton(
                               onPressed: _removePhoto,
                               child: const Text('Remove'),
@@ -497,6 +588,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 30),
 
+                // PUBLIC DETAILS
                 const _SectionTitle(
                   title: 'Public Details 🌐',
                   icon: Icons.public_rounded,
@@ -525,6 +617,7 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 30),
 
+                // PRIVATE DETAILS
                 const _SectionTitle(
                   title: 'Private Details 🔒',
                   icon: Icons.lock_outline_rounded,
@@ -585,10 +678,11 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
 
                 const SizedBox(height: 35),
 
+                // SUBMIT BUTTON
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _submitReport,
+                    onPressed: _isSubmitting ? null : _submitReport,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF171A2B),
                       foregroundColor: Colors.white,
@@ -599,15 +693,24 @@ class _ReportItemScreenState extends State<ReportItemScreen> {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    child: Text(
-                      _isLost
-                          ? 'Submit Lost Report'
-                          : 'Submit Found Report',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    child: _isSubmitting
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(
+                            _isLost
+                                ? 'Submit Lost Report'
+                                : 'Submit Found Report',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                   ),
                 ),
 

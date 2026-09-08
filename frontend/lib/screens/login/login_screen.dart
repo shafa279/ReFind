@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -9,6 +11,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
+  bool _isLoggingIn = false;
 
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -20,14 +23,50 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Login will be connected to the backend later.',
-        ),
-      ),
+  // Login using the Flask backend
+  Future<void> _login() async {
+    setState(() {
+      _isLoggingIn = true;
+    });
+
+    final result = await ApiService.login(
+      _emailController.text.trim(),
+      _passwordController.text,
     );
+
+    if (!mounted) return;
+
+    setState(() {
+      _isLoggingIn = false;
+    });
+
+    if (result['success'] == true) {
+      // Save the logged-in user's ID and role
+      AuthService.setUser(
+        id: result['user_id'],
+        userRole: result['role'],
+      );
+
+      // Clear the fields after successful login
+      _emailController.clear();
+      _passwordController.clear();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+        ),
+      );
+
+      // Go to Home screen
+      Navigator.pushReplacementNamed(context, '/');
+    } else {
+      // Keep the entered information so the user can correct it
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']),
+        ),
+      );
+    }
   }
 
   @override
@@ -117,8 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // COLLEGE / STUDENT ID
                       const Text(
-                        'College Email',
+                        'College / Student ID',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -130,11 +170,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       TextField(
                         controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
-                          hintText: 'you@college.edu',
+                          hintText: 'Enter your college / student ID',
                           prefixIcon: const Icon(
-                            Icons.email_outlined,
+                            Icons.badge_outlined,
                           ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -144,6 +183,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(height: 22),
 
+                      // PASSWORD
                       const Text(
                         'Password',
                         style: TextStyle(
@@ -187,7 +227,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _login,
+                          onPressed: _isLoggingIn ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF171A2B),
                             foregroundColor: Colors.white,
@@ -198,26 +238,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: const Text(
-                            'Login',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      const Center(
-                        child: Text(
-                          'Authentication will be connected to the backend.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF8A8D99),
-                          ),
+                          child: _isLoggingIn
+                              ? const SizedBox(
+                                  height: 20,
+                                  width: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Login',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                         ),
                       ),
                     ],

@@ -56,6 +56,23 @@ def create_tables():
         )
     """)
 
+    # VERIFICATIONS TABLE
+    connection.execute("""
+        CREATE TABLE IF NOT EXISTS verifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            claim_id INTEGER NOT NULL,
+            item_id INTEGER NOT NULL,
+            reporter_id TEXT NOT NULL,
+            claimant_id TEXT NOT NULL,
+            verification_details TEXT NOT NULL,
+            status TEXT DEFAULT 'Pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TIMESTAMP,
+            FOREIGN KEY (claim_id) REFERENCES claims (id),
+            FOREIGN KEY (item_id) REFERENCES items (id)
+        )
+    """)
+
     connection.commit()
     connection.close()
 

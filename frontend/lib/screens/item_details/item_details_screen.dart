@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/primary_button.dart';
+import '../../widgets/section_header.dart';
+
 class ItemDetailsScreen extends StatelessWidget {
   const ItemDetailsScreen({super.key});
 
@@ -9,7 +12,6 @@ class ItemDetailsScreen extends StatelessWidget {
     final isMobile = width < 800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
@@ -27,18 +29,13 @@ class ItemDetailsScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              const Text(
+              Text(
                 'Item Details',
-                style: TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  color: Color(0xFF171A2B),
-                ),
+                style: Theme.of(context).textTheme.headlineLarge,
               ),
 
               const SizedBox(height: 25),
 
-              // ITEM CARD
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -52,7 +49,6 @@ class ItemDetailsScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // PHOTO PLACEHOLDER
                     Container(
                       width: double.infinity,
                       height: isMobile ? 220 : 300,
@@ -116,16 +112,14 @@ class ItemDetailsScreen extends StatelessWidget {
 
                     const SizedBox(height: 25),
 
-                    const Text(
-                      'Public Details',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF171A2B),
-                      ),
+                    const SectionHeader(
+                      title: 'Public Details',
+                      icon: Icons.public_rounded,
+                      subtitle:
+                          'Information that can be safely shown to other users.',
                     ),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
                     const Text(
                       'Black wireless headphones reported near the Central Library.',
@@ -141,7 +135,6 @@ class ItemDetailsScreen extends StatelessWidget {
 
               const SizedBox(height: 22),
 
-              // POTENTIAL MATCH
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(22),
@@ -196,7 +189,6 @@ class ItemDetailsScreen extends StatelessWidget {
 
               const SizedBox(height: 22),
 
-              // PRIVACY NOTICE
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(20),
@@ -231,35 +223,18 @@ class ItemDetailsScreen extends StatelessWidget {
 
               const SizedBox(height: 25),
 
-              // ACTION BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Verification request will be connected later.',
-                        ),
+              PrimaryButton(
+                text: 'Start Verification',
+                fullWidth: true,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Verification request will be connected later.',
                       ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF171A2B),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 17),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(13),
                     ),
-                  ),
-                  child: const Text(
-                    'Start Verification',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
+                  );
+                },
               ),
 
               const SizedBox(height: 20),

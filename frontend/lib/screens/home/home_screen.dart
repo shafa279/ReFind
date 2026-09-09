@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/app_navigation.dart';
+import '../../widgets/primary_button.dart';
 import '../report/report_item_screen.dart';
-import '../my_reports/my_reports_screen.dart';
-import '../matches/matches_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -13,350 +13,124 @@ class HomeScreen extends StatelessWidget {
     final isMobile = screenWidth < 800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const AppNavigation(
+              currentPage: 'Home',
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildHero(context, isMobile),
+                    _buildFeatures(context, isMobile),
+                    _buildFooter(),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHero(BuildContext context, bool isMobile) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 24 : 80,
+        vertical: isMobile ? 55 : 90,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
           child: Column(
             children: [
-              // NAVIGATION BAR
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 24 : 70,
-                  vertical: 24,
-                ),
-                child: Row(
-                  children: [
-                    // LOGO
-                    Row(
-                      children: [
-                        Container(
-                          width: 42,
-                          height: 42,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF171A2B),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_outward_rounded,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Text(
-                          'ReFind',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF171A2B),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const Spacer(),
-
-                    if (!isMobile) ...[
-                      // HOME
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Home',
-                          style: TextStyle(
-                            color: Color(0xFF171A2B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      // MATCHES
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MatchesScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Matches',
-                          style: TextStyle(
-                            color: Color(0xFF686B78),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 12),
-
-                      // MY REPORTS
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const MyReportsScreen(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'My Reports',
-                          style: TextStyle(
-                            color: Color(0xFF686B78),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 20),
-
-                      // LOGIN
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/login');
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 22,
-                            vertical: 14,
-                          ),
-                          side: const BorderSide(
-                            color: Color(0xFFD9DBE5),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            color: Color(0xFF171A2B),
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ] else
-                      // MOBILE MENU
-                      IconButton(
-                        onPressed: () {},
-                        icon: const Icon(Icons.menu_rounded),
-                      ),
-                  ],
-                ),
-              ),
-
-              // HERO SECTION
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 24 : 70,
-                  vertical: isMobile ? 50 : 80,
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEDEBFF),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 16,
-                            color: Color(0xFF6C4EFF),
-                          ),
-                          SizedBox(width: 8),
-                          Text(
-                            'SMART CAMPUS LOST & FOUND',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 1,
-                              color: Color(0xFF6C4EFF),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    Text(
-                      'LOST SOMETHING?\nLET\'S FIND IT.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: isMobile ? 42 : 68,
-                        height: 1.02,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -2,
-                        color: const Color(0xFF171A2B),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    const Text(
-                      'Find it. Verify it. Reclaim it.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFF6C4EFF),
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    const SizedBox(
-                      width: 650,
-                      child: Text(
-                        'Lost something on campus? Found something that isn\'t yours? '
-                        'ReFind helps connect the two — simply, safely and intelligently.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 16,
-                          height: 1.6,
-                          color: Color(0xFF686B78),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 38),
-
-                    Wrap(
-                      spacing: 14,
-                      runSpacing: 14,
-                      alignment: WrapAlignment.center,
-                      children: [
-                        // I LOST SOMETHING
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ReportItemScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(Icons.search_rounded),
-                          label: const Text('I Lost Something'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF171A2B),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 18,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-
-                        // I FOUND SOMETHING
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ReportItemScreen(),
-                              ),
-                            );
-                          },
-                          icon: const Icon(
-                            Icons.volunteer_activism_rounded,
-                          ),
-                          label: const Text('I Found Something'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: const Color(0xFF171A2B),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 18,
-                            ),
-                            side: const BorderSide(
-                              color: Color(0xFFD9DBE5),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              // FEATURE CARDS
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isMobile ? 24 : 70,
-                  20,
-                  isMobile ? 24 : 70,
-                  80,
-                ),
-                child: Wrap(
-                  spacing: 18,
-                  runSpacing: 18,
-                  alignment: WrapAlignment.center,
-                  children: const [
-                    _FeatureCard(
-                      icon: Icons.auto_awesome_rounded,
-                      title: 'AI-powered matching',
-                      description:
-                          'Smart matching helps connect lost items with their possible owners.',
-                    ),
-                    _FeatureCard(
-                      icon: Icons.verified_user_outlined,
-                      title: 'Private verification',
-                      description:
-                          'Ownership can be verified before an item is returned.',
-                    ),
-                    _FeatureCard(
-                      icon: Icons.school_outlined,
-                      title: 'Built for your campus',
-                      description:
-                          'A simple lost-and-found system designed around campus life.',
-                    ),
-                  ],
-                ),
-              ),
-
-              // FOOTER
               Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 24 : 70,
-                  vertical: 45,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
                 ),
-                color: const Color(0xFF171A2B),
-                child: Column(
-                  children: [
-                    const Text(
-                      'ReFind',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      'Lost things deserve a way home.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.65),
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF0EBFF),
+                  borderRadius: BorderRadius.circular(30),
                 ),
+                child: const Text(
+                  'SMART CAMPUS LOST & FOUND',
+                  style: TextStyle(
+                    color: Color(0xFF6045D8),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 25),
+              Text(
+                'LOST SOMETHING?\nLET\'S FIND IT.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                      fontSize: isMobile ? 38 : 58,
+                      height: 1.05,
+                    ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Find it. Verify it. Reclaim it.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF6C4EFF),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Lost something on campus? Found something that isn\'t yours? '
+                'ReFind helps connect the two — simply, safely and intelligently.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 16,
+                  height: 1.6,
+                  color: Color(0xFF686B78),
+                ),
+              ),
+              const SizedBox(height: 35),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  PrimaryButton(
+                    text: 'I Lost Something',
+                    icon: Icons.search_rounded,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReportItemScreen(
+                            initialIsLost: true,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ReportItemScreen(
+                            initialIsLost: false,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    label: const Text('I Found Something'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -364,27 +138,155 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildFeatures(BuildContext context, bool isMobile) {
+    final features = [
+      const _FeatureData(
+        icon: Icons.auto_awesome_rounded,
+        title: 'AI-Powered Matching',
+        description:
+            'Smart matching helps identify possible connections between lost and found reports.',
+      ),
+      const _FeatureData(
+        icon: Icons.lock_outline_rounded,
+        title: 'Private Verification',
+        description:
+            'Private identifying details stay hidden and are only used during ownership verification.',
+      ),
+      const _FeatureData(
+        icon: Icons.school_outlined,
+        title: 'Built for Your Campus',
+        description:
+            'A simple lost-and-found system designed specifically for your college community.',
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(
+        horizontal: isMobile ? 24 : 80,
+        vertical: 55,
+      ),
+      color: Colors.white,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1100),
+          child: Column(
+            children: [
+              Text(
+                'Why ReFind?',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Designed to make campus lost-and-found faster, safer and smarter.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Color(0xFF686B78),
+                  fontSize: 15,
+                ),
+              ),
+              const SizedBox(height: 35),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 700) {
+                    return Column(
+                      children: features
+                          .map(
+                            (feature) => Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: _FeatureCard(
+                                feature: feature,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: features
+                        .map(
+                          (feature) => Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 8),
+                              child: _FeatureCard(
+                                feature: feature,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 24,
+        vertical: 35,
+      ),
+      color: const Color(0xFF171A2B),
+      child: const Column(
+        children: [
+          Text(
+            'ReFind',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Lost things deserve a way home.',
+            style: TextStyle(
+              color: Colors.white70,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _FeatureCard extends StatelessWidget {
+class _FeatureData {
   final IconData icon;
   final String title;
   final String description;
 
-  const _FeatureCard({
+  const _FeatureData({
     required this.icon,
     required this.title,
     required this.description,
+  });
+}
+
+class _FeatureCard extends StatelessWidget {
+  final _FeatureData feature;
+
+  const _FeatureCard({
+    required this.feature,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 310,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: const Color(0xFFF7F8FC),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: const Color(0xFFE8E9F0),
         ),
@@ -393,30 +295,30 @@ class _FeatureCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: const Color(0xFFEDEBFF),
-              borderRadius: BorderRadius.circular(14),
+              color: const Color(0xFFF0EBFF),
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
-              icon,
+              feature.icon,
               color: const Color(0xFF6C4EFF),
               size: 23,
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 18),
           Text(
-            title,
+            feature.title,
             style: const TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w800,
               color: Color(0xFF171A2B),
             ),
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 10),
           Text(
-            description,
+            feature.description,
             style: const TextStyle(
               fontSize: 14,
               height: 1.5,

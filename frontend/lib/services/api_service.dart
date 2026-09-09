@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000';
+  // Flask backend for Flutter Web / Edge
+  static const String baseUrl = 'http://127.0.0.1:5000';
 
   // =========================
   // LOGIN
@@ -15,10 +17,13 @@ class ApiService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/api/login'),
-        body: {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
           'user_id': userId,
           'password': password,
-        },
+        }),
       );
 
       final data = jsonDecode(response.body);
@@ -110,7 +115,8 @@ class ApiService {
 
       return {
         'success': data['success'] ?? false,
-        'message': data['message'] ?? 'Report submission failed',
+        'message':
+            data['message'] ?? 'Report submission failed',
         'item_id': data['item_id'],
       };
     } catch (e) {
@@ -118,6 +124,28 @@ class ApiService {
         'success': false,
         'message': 'Connection failed: $e',
       };
+    }
+  }
+
+  // =========================
+  // GET ALL ITEMS
+  // =========================
+
+  static Future<List<dynamic>> getAllItems() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/items'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        return data['items'] ?? [];
+      }
+
+      return [];
+    } catch (e) {
+      return [];
     }
   }
 
@@ -133,17 +161,18 @@ class ApiService {
         Uri.parse('$baseUrl/items'),
       );
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-
-        final items = data['items'] ?? [];
-
-        return items.where((item) {
-          return item['reporter_id'] == userId;
-        }).toList();
+      if (response.statusCode != 200) {
+        return [];
       }
 
-      return [];
+      final data = jsonDecode(response.body);
+
+      final items = data['items'] ?? [];
+
+      return items.where((item) {
+        return item['reporter_id']?.toString() ==
+            userId;
+      }).toList();
     } catch (e) {
       return [];
     }
@@ -210,6 +239,7 @@ class ApiService {
   static Future<Map<String, dynamic>> createClaim({
     required int itemId,
     required String claimantId,
+    required String reporterId,
   }) async {
     try {
       final response = await http.post(
@@ -217,6 +247,7 @@ class ApiService {
         body: {
           'item_id': itemId.toString(),
           'claimant_id': claimantId,
+          'reporter_id': reporterId,
         },
       );
 
@@ -236,6 +267,30 @@ class ApiService {
   }
 
   // =========================
+  // GET CLAIMS
+  // =========================
+
+  static Future<List<dynamic>> getClaims(
+    int itemId,
+  ) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/claims/$itemId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        return data['claims'] ?? [];
+      }
+
+      return [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // =========================
   // GET NOTIFICATIONS
   // =========================
 
@@ -244,7 +299,9 @@ class ApiService {
   ) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/notifications/$userId'),
+        Uri.parse(
+          '$baseUrl/api/notifications/$userId',
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -273,11 +330,7 @@ class ApiService {
         ),
       );
 
-      if (response.statusCode == 200) {
-        return true;
-      }
-
-      return false;
+      return response.statusCode == 200;
     } catch (e) {
       return false;
     }
@@ -296,7 +349,8 @@ class ApiService {
         Uri.parse('$baseUrl/api/verification'),
         body: {
           'claim_id': claimId.toString(),
-          'verification_details': verificationDetails,
+          'verification_details':
+              verificationDetails,
         },
       );
 
@@ -305,12 +359,16 @@ class ApiService {
       return {
         'success': data['success'] ?? false,
         'message':
-            data['message'] ?? 'Verification submission failed',
-        'verification_id': data['verification_id'],
+            data['message'] ??
+                'Verification submission failed',
+        'verification_id':
+            data['verification_id'],
         'claim_id': data['claim_id'],
         'item_id': data['item_id'],
-        'reporter_id': data['reporter_id'],
-        'claimant_id': data['claimant_id'],
+        'reporter_id':
+            data['reporter_id'],
+        'claimant_id':
+            data['claimant_id'],
         'status': data['status'],
       };
     } catch (e) {
@@ -376,8 +434,10 @@ class ApiService {
       return {
         'success': data['success'] ?? false,
         'message':
-            data['message'] ?? 'Verification review failed',
-        'verification_id': data['verification_id'],
+            data['message'] ??
+                'Verification review failed',
+        'verification_id':
+            data['verification_id'],
         'claim_id': data['claim_id'],
         'item_id': data['item_id'],
         'decision': data['decision'],

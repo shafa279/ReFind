@@ -3,8 +3,15 @@ from flask_cors import CORS
 import os
 import sys
 
-# Make backend folder available for imports
-BACKEND_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend')
+
+# =========================================================
+# BACKEND IMPORT SETUP
+# =========================================================
+
+BACKEND_FOLDER = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    'backend'
+)
 
 if BACKEND_FOLDER not in sys.path:
     sys.path.insert(0, BACKEND_FOLDER)
@@ -12,6 +19,10 @@ if BACKEND_FOLDER not in sys.path:
 from database import get_db_connection
 from matching import find_matches
 
+
+# =========================================================
+# FLASK APP
+# =========================================================
 
 app = Flask(__name__)
 CORS(app)
@@ -23,6 +34,7 @@ CORS(app)
 
 @app.route('/')
 def home():
+
     return "ReFind Backend is running!"
 
 
@@ -33,22 +45,42 @@ def home():
 @app.route('/api/login', methods=['POST'])
 def login():
 
-    user_id = request.form.get('user_id')
-    password = request.form.get('password')
+    data = request.get_json(silent=True)
+
+    if not data:
+
+        return jsonify({
+            'success': False,
+            'message': 'Login data is missing'
+        }), 400
+
+    user_id = data.get('user_id')
+    password = data.get('password')
+
+    if not user_id or not password:
+
+        return jsonify({
+            'success': False,
+            'message': 'College ID and password are required'
+        }), 400
 
     users = {
+
         'TEST001': {
             'password': 'test123',
             'role': 'student'
         },
+
         'TEST002': {
             'password': 'test123',
             'role': 'student'
         },
+
         'TEST003': {
             'password': 'test123',
             'role': 'student'
         },
+
         'ADMIN001': {
             'password': 'admin123',
             'role': 'admin'
@@ -56,23 +88,30 @@ def login():
     }
 
     if user_id not in users:
+
         return jsonify({
             'success': False,
             'message': 'User not found'
         }), 401
 
     if users[user_id]['password'] != password:
+
         return jsonify({
             'success': False,
             'message': 'Incorrect password'
         }), 401
 
     return jsonify({
+
         'success': True,
+
         'message': 'Login successful',
+
         'user_id': user_id,
+
         'role': users[user_id]['role']
-    })
+
+    }), 200
 
 
 # =========================================================
@@ -88,11 +127,27 @@ def report_item():
     location = request.form.get('location')
     date = request.form.get('date')
     time = request.form.get('time')
-    public_details = request.form.get('public_details')
-    private_details = request.form.get('private_details')
-    reporter_id = request.form.get('reporter_id')
 
-    if not item_type or not item_name or not category or not location or not date:
+    public_details = request.form.get(
+        'public_details'
+    )
+
+    private_details = request.form.get(
+        'private_details'
+    )
+
+    reporter_id = request.form.get(
+        'reporter_id'
+    )
+
+    if (
+        not item_type
+        or not item_name
+        or not category
+        or not location
+        or not date
+    ):
+
         return jsonify({
             'success': False,
             'message': 'Required fields are missing'
@@ -106,10 +161,17 @@ def report_item():
 
         if image and image.filename:
 
-            os.makedirs('uploads', exist_ok=True)
+            os.makedirs(
+                'uploads',
+                exist_ok=True
+            )
 
             filename = image.filename
-            image_path = os.path.join('uploads', filename)
+
+            image_path = os.path.join(
+                'uploads',
+                filename
+            )
 
             image.save(image_path)
 
@@ -118,6 +180,7 @@ def report_item():
     try:
 
         cursor = connection.execute("""
+
             INSERT INTO items (
                 item_type,
                 item_name,
@@ -131,8 +194,11 @@ def report_item():
                 status,
                 reporter_id
             )
+
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
+
         """, (
+
             item_type,
             item_name,
             category,
@@ -143,6 +209,7 @@ def report_item():
             private_details,
             image_path,
             reporter_id
+
         ))
 
         item_id = cursor.lastrowid
@@ -150,9 +217,14 @@ def report_item():
         connection.commit()
 
         return jsonify({
+
             'success': True,
-            'message': 'Item reported successfully',
+
+            'message':
+                'Item reported successfully',
+
             'item_id': item_id
+
         }), 201
 
     except Exception as e:
@@ -160,8 +232,12 @@ def report_item():
         connection.rollback()
 
         return jsonify({
+
             'success': False,
-            'message': f'Failed to report item: {str(e)}'
+
+            'message':
+                f'Failed to report item: {str(e)}'
+
         }), 500
 
     finally:
@@ -184,15 +260,25 @@ def legacy_report():
     location = data.get('location')
     date = data.get('date')
     time = data.get('time')
-    public_details = data.get('public_details')
-    private_details = data.get('private_details')
-    reporter_id = data.get('reporter_id')
+
+    public_details = data.get(
+        'public_details'
+    )
+
+    private_details = data.get(
+        'private_details'
+    )
+
+    reporter_id = data.get(
+        'reporter_id'
+    )
 
     connection = get_db_connection()
 
     try:
 
         cursor = connection.execute("""
+
             INSERT INTO items (
                 item_type,
                 item_name,
@@ -205,8 +291,11 @@ def legacy_report():
                 status,
                 reporter_id
             )
+
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
+
         """, (
+
             item_type,
             item_name,
             category,
@@ -216,6 +305,7 @@ def legacy_report():
             public_details,
             private_details,
             reporter_id
+
         ))
 
         item_id = cursor.lastrowid
@@ -223,9 +313,14 @@ def legacy_report():
         connection.commit()
 
         return jsonify({
+
             'success': True,
-            'message': 'Item reported successfully',
+
+            'message':
+                'Item reported successfully',
+
             'item_id': item_id
+
         }), 201
 
     except Exception as e:
@@ -233,8 +328,11 @@ def legacy_report():
         connection.rollback()
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -254,6 +352,7 @@ def get_items():
     try:
 
         rows = connection.execute("""
+
             SELECT
                 id,
                 reporter_id,
@@ -266,8 +365,11 @@ def get_items():
                 public_details,
                 image_path,
                 status
+
             FROM items
+
             ORDER BY id DESC
+
         """).fetchall()
 
         items = []
@@ -275,29 +377,57 @@ def get_items():
         for row in rows:
 
             items.append({
+
                 'id': row['id'],
-                'reporter_id': row['reporter_id'],
-                'item_type': row['item_type'],
-                'item_name': row['item_name'],
-                'category': row['category'],
-                'location': row['location'],
-                'date': row['date'],
-                'time': row['time'],
-                'public_details': row['public_details'],
-                'image_path': row['image_path'],
-                'status': row['status']
+
+                'reporter_id':
+                    row['reporter_id'],
+
+                'item_type':
+                    row['item_type'],
+
+                'item_name':
+                    row['item_name'],
+
+                'category':
+                    row['category'],
+
+                'location':
+                    row['location'],
+
+                'date':
+                    row['date'],
+
+                'time':
+                    row['time'],
+
+                'public_details':
+                    row['public_details'],
+
+                'image_path':
+                    row['image_path'],
+
+                'status':
+                    row['status']
+
             })
 
         return jsonify({
+
             'success': True,
+
             'items': items
+
         })
 
     except Exception as e:
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -309,7 +439,10 @@ def get_items():
 # MATCHING
 # =========================================================
 
-@app.route('/api/matches/<int:item_id>', methods=['GET'])
+@app.route(
+    '/api/matches/<int:item_id>',
+    methods=['GET']
+)
 def get_matches(item_id):
 
     connection = get_db_connection()
@@ -317,37 +450,56 @@ def get_matches(item_id):
     try:
 
         item = connection.execute("""
+
             SELECT *
             FROM items
             WHERE id = ?
+
         """, (item_id,)).fetchone()
 
         if not item:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Item not found'
+
+                'message':
+                    'Item not found'
+
             }), 404
 
+        # Resolved items should not be matched
         if item['status'] != 'Searching':
 
             return jsonify({
+
                 'success': True,
+
                 'matches': []
+
             })
 
-        matches = find_matches(item_id)
+        # IMPORTANT:
+        # find_matches() expects the complete item object,
+        # not just the item ID.
+        matches = find_matches(item)
 
         return jsonify({
+
             'success': True,
+
             'matches': matches
+
         })
 
     except Exception as e:
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -362,14 +514,23 @@ def get_matches(item_id):
 @app.route('/api/claims', methods=['POST'])
 def create_claim():
 
-    item_id = request.form.get('item_id')
-    claimant_id = request.form.get('claimant_id')
+    item_id = request.form.get(
+        'item_id'
+    )
+
+    claimant_id = request.form.get(
+        'claimant_id'
+    )
 
     if not item_id or not claimant_id:
 
         return jsonify({
+
             'success': False,
-            'message': 'Item ID and claimant ID are required'
+
+            'message':
+                'Item ID and claimant ID are required'
+
         }), 400
 
     connection = get_db_connection()
@@ -377,87 +538,127 @@ def create_claim():
     try:
 
         item = connection.execute("""
+
             SELECT *
             FROM items
             WHERE id = ?
+
         """, (item_id,)).fetchone()
 
         if not item:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Item not found'
+
+                'message':
+                    'Item not found'
+
             }), 404
 
         if item['status'] != 'Searching':
 
             return jsonify({
+
                 'success': False,
-                'message': 'This item is no longer available for claiming'
+
+                'message':
+                    'This item is no longer available for claiming'
+
             }), 400
 
         if item['reporter_id'] == claimant_id:
 
             return jsonify({
+
                 'success': False,
-                'message': 'You cannot claim your own reported item'
+
+                'message':
+                    'You cannot claim your own reported item'
+
             }), 400
 
         existing_claim = connection.execute("""
+
             SELECT id
             FROM claims
             WHERE item_id = ?
             AND claimant_id = ?
             AND status = 'Pending'
+
         """, (
+
             item_id,
             claimant_id
+
         )).fetchone()
 
         if existing_claim:
 
             return jsonify({
+
                 'success': False,
-                'message': 'You already have a pending claim for this item'
+
+                'message':
+                    'You already have a pending claim for this item'
+
             }), 400
 
         cursor = connection.execute("""
+
             INSERT INTO claims (
                 item_id,
                 claimant_id,
                 reporter_id,
                 status
             )
+
             VALUES (?, ?, ?, 'Pending')
+
         """, (
+
             item_id,
             claimant_id,
             item['reporter_id']
+
         ))
 
         claim_id = cursor.lastrowid
 
         connection.execute("""
+
             INSERT INTO notifications (
                 user_id,
                 item_id,
                 claim_id,
                 message
             )
+
             VALUES (?, ?, ?, ?)
+
         """, (
+
             item['reporter_id'],
+
             item_id,
+
             claim_id,
+
             'Someone has submitted a claim for your reported item.'
+
         ))
 
         connection.commit()
 
         return jsonify({
+
             'success': True,
-            'message': 'Claim submitted successfully',
+
+            'message':
+                'Claim submitted successfully',
+
             'claim_id': claim_id
+
         }), 201
 
     except Exception as e:
@@ -465,8 +666,12 @@ def create_claim():
         connection.rollback()
 
         return jsonify({
+
             'success': False,
-            'message': f'Claim failed: {str(e)}'
+
+            'message':
+                f'Claim failed: {str(e)}'
+
         }), 500
 
     finally:
@@ -478,7 +683,10 @@ def create_claim():
 # GET CLAIMS
 # =========================================================
 
-@app.route('/api/claims/<int:item_id>', methods=['GET'])
+@app.route(
+    '/api/claims/<int:item_id>',
+    methods=['GET']
+)
 def get_claims(item_id):
 
     connection = get_db_connection()
@@ -486,10 +694,12 @@ def get_claims(item_id):
     try:
 
         claims = connection.execute("""
+
             SELECT *
             FROM claims
             WHERE item_id = ?
             ORDER BY id DESC
+
         """, (item_id,)).fetchall()
 
         result = []
@@ -497,24 +707,43 @@ def get_claims(item_id):
         for claim in claims:
 
             result.append({
-                'id': claim['id'],
-                'item_id': claim['item_id'],
-                'claimant_id': claim['claimant_id'],
-                'reporter_id': claim['reporter_id'],
-                'status': claim['status'],
-                'created_at': claim['created_at']
+
+                'id':
+                    claim['id'],
+
+                'item_id':
+                    claim['item_id'],
+
+                'claimant_id':
+                    claim['claimant_id'],
+
+                'reporter_id':
+                    claim['reporter_id'],
+
+                'status':
+                    claim['status'],
+
+                'created_at':
+                    claim['created_at']
+
             })
 
         return jsonify({
+
             'success': True,
+
             'claims': result
+
         })
 
     except Exception as e:
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -526,7 +755,10 @@ def get_claims(item_id):
 # NOTIFICATIONS
 # =========================================================
 
-@app.route('/api/notifications/<user_id>', methods=['GET'])
+@app.route(
+    '/api/notifications/<user_id>',
+    methods=['GET']
+)
 def get_notifications(user_id):
 
     connection = get_db_connection()
@@ -534,10 +766,12 @@ def get_notifications(user_id):
     try:
 
         notifications = connection.execute("""
+
             SELECT *
             FROM notifications
             WHERE user_id = ?
             ORDER BY id DESC
+
         """, (user_id,)).fetchall()
 
         result = []
@@ -545,25 +779,46 @@ def get_notifications(user_id):
         for notification in notifications:
 
             result.append({
-                'id': notification['id'],
-                'user_id': notification['user_id'],
-                'item_id': notification['item_id'],
-                'claim_id': notification['claim_id'],
-                'message': notification['message'],
-                'read': notification['read'],
-                'created_at': notification['created_at']
+
+                'id':
+                    notification['id'],
+
+                'user_id':
+                    notification['user_id'],
+
+                'item_id':
+                    notification['item_id'],
+
+                'claim_id':
+                    notification['claim_id'],
+
+                'message':
+                    notification['message'],
+
+                'read':
+                    notification['read'],
+
+                'created_at':
+                    notification['created_at']
+
             })
 
         return jsonify({
+
             'success': True,
+
             'notifications': result
+
         })
 
     except Exception as e:
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -575,7 +830,10 @@ def get_notifications(user_id):
 # MARK NOTIFICATION AS READ
 # =========================================================
 
-@app.route('/api/notifications/<int:notification_id>/read', methods=['POST'])
+@app.route(
+    '/api/notifications/<int:notification_id>/read',
+    methods=['POST']
+)
 def mark_notification_read(notification_id):
 
     connection = get_db_connection()
@@ -583,16 +841,24 @@ def mark_notification_read(notification_id):
     try:
 
         connection.execute("""
+
             UPDATE notifications
+
             SET read = 1
+
             WHERE id = ?
+
         """, (notification_id,))
 
         connection.commit()
 
         return jsonify({
+
             'success': True,
-            'message': 'Notification marked as read'
+
+            'message':
+                'Notification marked as read'
+
         })
 
     except Exception as e:
@@ -600,8 +866,11 @@ def mark_notification_read(notification_id):
         connection.rollback()
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -613,17 +882,29 @@ def mark_notification_read(notification_id):
 # SUBMIT VERIFICATION
 # =========================================================
 
-@app.route('/api/verification', methods=['POST'])
+@app.route(
+    '/api/verification',
+    methods=['POST']
+)
 def submit_verification():
 
-    claim_id = request.form.get('claim_id')
-    verification_details = request.form.get('verification_details')
+    claim_id = request.form.get(
+        'claim_id'
+    )
+
+    verification_details = request.form.get(
+        'verification_details'
+    )
 
     if not claim_id or not verification_details:
 
         return jsonify({
+
             'success': False,
-            'message': 'Claim ID and verification details are required'
+
+            'message':
+                'Claim ID and verification details are required'
+
         }), 400
 
     connection = get_db_connection()
@@ -631,39 +912,56 @@ def submit_verification():
     try:
 
         claim = connection.execute("""
+
             SELECT *
             FROM claims
             WHERE id = ?
+
         """, (claim_id,)).fetchone()
 
         if not claim:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Claim not found'
+
+                'message':
+                    'Claim not found'
+
             }), 404
 
         if claim['status'] != 'Pending':
 
             return jsonify({
+
                 'success': False,
-                'message': 'This claim is no longer pending'
+
+                'message':
+                    'This claim is no longer pending'
+
             }), 400
 
         existing_verification = connection.execute("""
+
             SELECT id
             FROM verifications
             WHERE claim_id = ?
+
         """, (claim_id,)).fetchone()
 
         if existing_verification:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Verification has already been submitted'
+
+                'message':
+                    'Verification has already been submitted'
+
             }), 400
 
         cursor = connection.execute("""
+
             INSERT INTO verifications (
                 claim_id,
                 item_id,
@@ -672,13 +970,21 @@ def submit_verification():
                 verification_details,
                 status
             )
+
             VALUES (?, ?, ?, ?, ?, 'Pending')
+
         """, (
+
             claim['id'],
+
             claim['item_id'],
+
             claim['reporter_id'],
+
             claim['claimant_id'],
+
             verification_details
+
         ))
 
         verification_id = cursor.lastrowid
@@ -686,14 +992,30 @@ def submit_verification():
         connection.commit()
 
         return jsonify({
+
             'success': True,
-            'message': 'Verification submitted successfully',
-            'verification_id': verification_id,
-            'claim_id': claim['id'],
-            'item_id': claim['item_id'],
-            'reporter_id': claim['reporter_id'],
-            'claimant_id': claim['claimant_id'],
-            'status': 'Pending'
+
+            'message':
+                'Verification submitted successfully',
+
+            'verification_id':
+                verification_id,
+
+            'claim_id':
+                claim['id'],
+
+            'item_id':
+                claim['item_id'],
+
+            'reporter_id':
+                claim['reporter_id'],
+
+            'claimant_id':
+                claim['claimant_id'],
+
+            'status':
+                'Pending'
+
         }), 201
 
     except Exception as e:
@@ -701,8 +1023,12 @@ def submit_verification():
         connection.rollback()
 
         return jsonify({
+
             'success': False,
-            'message': f'Verification submission failed: {str(e)}'
+
+            'message':
+                f'Verification submission failed: {str(e)}'
+
         }), 500
 
     finally:
@@ -714,7 +1040,10 @@ def submit_verification():
 # GET VERIFICATION
 # =========================================================
 
-@app.route('/api/verification/<int:verification_id>', methods=['GET'])
+@app.route(
+    '/api/verification/<int:verification_id>',
+    methods=['GET']
+)
 def get_verification(verification_id):
 
     connection = get_db_connection()
@@ -722,40 +1051,71 @@ def get_verification(verification_id):
     try:
 
         verification = connection.execute("""
+
             SELECT *
             FROM verifications
             WHERE id = ?
+
         """, (verification_id,)).fetchone()
 
         if not verification:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Verification not found'
+
+                'message':
+                    'Verification not found'
+
             }), 404
 
         result = {
-            'id': verification['id'],
-            'claim_id': verification['claim_id'],
-            'item_id': verification['item_id'],
-            'reporter_id': verification['reporter_id'],
-            'claimant_id': verification['claimant_id'],
-            'verification_details': verification['verification_details'],
-            'status': verification['status'],
-            'created_at': verification['created_at'],
-            'reviewed_at': verification['reviewed_at']
+
+            'id':
+                verification['id'],
+
+            'claim_id':
+                verification['claim_id'],
+
+            'item_id':
+                verification['item_id'],
+
+            'reporter_id':
+                verification['reporter_id'],
+
+            'claimant_id':
+                verification['claimant_id'],
+
+            'verification_details':
+                verification['verification_details'],
+
+            'status':
+                verification['status'],
+
+            'created_at':
+                verification['created_at'],
+
+            'reviewed_at':
+                verification['reviewed_at']
+
         }
 
         return jsonify({
+
             'success': True,
+
             'verification': result
+
         })
 
     except Exception as e:
 
         return jsonify({
+
             'success': False,
+
             'message': str(e)
+
         }), 500
 
     finally:
@@ -767,269 +1127,379 @@ def get_verification(verification_id):
 # REVIEW VERIFICATION
 # =========================================================
 
-@app.route('/api/verification/<int:verification_id>/review', methods=['POST'])
+@app.route(
+    '/api/verification/<int:verification_id>/review',
+    methods=['POST']
+)
 def review_verification(verification_id):
 
-    reviewer_id = request.form.get('reviewer_id')
-    decision = request.form.get('decision')
+    reviewer_id = request.form.get(
+        'reviewer_id'
+    )
+
+    decision = request.form.get(
+        'decision'
+    )
 
     if not reviewer_id or not decision:
 
         return jsonify({
+
             'success': False,
-            'message': 'Reviewer ID and decision are required'
+
+            'message':
+                'Reviewer ID and decision are required'
+
         }), 400
 
-    if decision not in ['Approved', 'Rejected']:
+    if decision not in [
+        'Approved',
+        'Rejected'
+    ]:
 
         return jsonify({
+
             'success': False,
-            'message': 'Invalid decision'
+
+            'message':
+                'Invalid decision'
+
         }), 400
 
     connection = get_db_connection()
 
     try:
 
-        # Get verification
         verification = connection.execute("""
+
             SELECT *
             FROM verifications
             WHERE id = ?
+
         """, (verification_id,)).fetchone()
 
         if not verification:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Verification not found'
+
+                'message':
+                    'Verification not found'
+
             }), 404
 
-        # Only reporter can review
         if verification['reporter_id'] != reviewer_id:
 
             return jsonify({
+
                 'success': False,
-                'message': 'Only the original reporter can review this verification'
+
+                'message':
+                    'Only the original reporter can review this verification'
+
             }), 403
 
-        # Prevent duplicate review
         if verification['status'] != 'Pending':
 
             return jsonify({
+
                 'success': False,
-                'message': 'This verification has already been reviewed'
+
+                'message':
+                    'This verification has already been reviewed'
+
             }), 400
 
         claim_id = verification['claim_id']
+
         item_id = verification['item_id']
+
         claimant_id = verification['claimant_id']
 
-        # =================================================
+
+        # =====================================================
         # APPROVED
-        # =================================================
+        # =====================================================
 
         if decision == 'Approved':
 
-            # Get image path before deleting item
             item = connection.execute("""
+
                 SELECT image_path
                 FROM items
                 WHERE id = ?
+
             """, (item_id,)).fetchone()
 
-            image_path = item['image_path'] if item else None
+            image_path = (
+                item['image_path']
+                if item
+                else None
+            )
 
-            # Mark claim as approved
             connection.execute("""
+
                 UPDATE claims
+
                 SET status = 'Approved'
+
                 WHERE id = ?
+
             """, (claim_id,))
 
-            # Mark verification as approved
             connection.execute("""
+
                 UPDATE verifications
+
                 SET status = 'Approved',
                     reviewed_at = CURRENT_TIMESTAMP
+
                 WHERE id = ?
+
             """, (verification_id,))
 
-            # Mark item as resolved
             connection.execute("""
+
                 UPDATE items
+
                 SET status = 'Resolved'
+
                 WHERE id = ?
+
             """, (item_id,))
 
-            # -------------------------------------------------
-            # Notify claimant
-            # -------------------------------------------------
-
             connection.execute("""
+
                 INSERT INTO notifications (
                     user_id,
                     item_id,
                     claim_id,
                     message
                 )
+
                 VALUES (?, ?, ?, ?)
+
             """, (
+
                 claimant_id,
+
                 item_id,
+
                 claim_id,
-                'Your claim has been approved. The item has been successfully resolved.'
+
+                'Your claim has been approved. '
+                'The item has been successfully resolved.'
+
             ))
 
-            # -------------------------------------------------
-            # Delete other notifications for this item
-            # -------------------------------------------------
-
             connection.execute("""
+
                 DELETE FROM notifications
+
                 WHERE item_id = ?
+
                 AND claim_id != ?
+
             """, (
+
                 item_id,
+
                 claim_id
+
             ))
 
-            # -------------------------------------------------
-            # Delete other verifications
-            # -------------------------------------------------
-
             connection.execute("""
+
                 DELETE FROM verifications
+
                 WHERE item_id = ?
+
                 AND id != ?
+
             """, (
+
                 item_id,
+
                 verification_id
+
             ))
 
-            # -------------------------------------------------
-            # Delete other claims
-            # -------------------------------------------------
-
             connection.execute("""
+
                 DELETE FROM claims
+
                 WHERE item_id = ?
+
                 AND id != ?
+
             """, (
+
                 item_id,
+
                 claim_id
+
             ))
 
-            # -------------------------------------------------
-            # Delete approved verification
-            # -------------------------------------------------
-
             connection.execute("""
+
                 DELETE FROM verifications
+
                 WHERE id = ?
+
             """, (verification_id,))
 
-            # -------------------------------------------------
-            # Delete approved claim
-            # -------------------------------------------------
-
             connection.execute("""
+
                 DELETE FROM claims
+
                 WHERE id = ?
+
             """, (claim_id,))
 
-            # -------------------------------------------------
-            # Delete item/report
-            # -------------------------------------------------
-
             connection.execute("""
-                DELETE FROM items
-                WHERE id = ?
-            """, (item_id,))
 
-            # -------------------------------------------------
-            # Delete uploaded image if it exists
-            # -------------------------------------------------
+                DELETE FROM items
+
+                WHERE id = ?
+
+            """, (item_id,))
 
             if image_path:
 
                 try:
 
                     full_image_path = os.path.join(
-                        os.path.dirname(os.path.abspath(__file__)),
+
+                        os.path.dirname(
+                            os.path.abspath(__file__)
+                        ),
+
                         image_path
+
                     )
 
-                    if os.path.exists(full_image_path):
-                        os.remove(full_image_path)
+                    if os.path.exists(
+                        full_image_path
+                    ):
+
+                        os.remove(
+                            full_image_path
+                        )
 
                 except Exception:
-                    # Database deletion should still succeed
+
                     pass
 
             connection.commit()
 
             return jsonify({
+
                 'success': True,
-                'message': 'Verification approved and report deleted successfully',
-                'verification_id': verification_id,
-                'claim_id': claim_id,
-                'item_id': item_id,
-                'decision': decision
+
+                'message':
+                    'Verification approved and report deleted successfully',
+
+                'verification_id':
+                    verification_id,
+
+                'claim_id':
+                    claim_id,
+
+                'item_id':
+                    item_id,
+
+                'decision':
+                    decision
+
             }), 200
 
-        # =================================================
+
+        # =====================================================
         # REJECTED
-        # =================================================
+        # =====================================================
 
         else:
 
             connection.execute("""
+
                 UPDATE verifications
+
                 SET status = 'Rejected',
                     reviewed_at = CURRENT_TIMESTAMP
+
                 WHERE id = ?
+
             """, (verification_id,))
 
             connection.execute("""
+
                 UPDATE claims
+
                 SET status = 'Rejected'
+
                 WHERE id = ?
+
             """, (claim_id,))
 
             connection.execute("""
+
                 INSERT INTO notifications (
                     user_id,
                     item_id,
                     claim_id,
                     message
                 )
+
                 VALUES (?, ?, ?, ?)
+
             """, (
+
                 claimant_id,
+
                 item_id,
+
                 claim_id,
+
                 'Your claim verification was rejected.'
+
             ))
 
             connection.commit()
 
             return jsonify({
+
                 'success': True,
-                'message': 'Verification rejected successfully',
-                'verification_id': verification_id,
-                'claim_id': claim_id,
-                'item_id': item_id,
-                'decision': decision
+
+                'message':
+                    'Verification rejected successfully',
+
+                'verification_id':
+                    verification_id,
+
+                'claim_id':
+                    claim_id,
+
+                'item_id':
+                    item_id,
+
+                'decision':
+                    decision
+
             }), 200
+
 
     except Exception as e:
 
         connection.rollback()
 
         return jsonify({
+
             'success': False,
-            'message': f'Verification review failed: {str(e)}'
+
+            'message':
+                f'Verification review failed: {str(e)}'
+
         }), 500
 
     finally:
@@ -1044,7 +1514,11 @@ def review_verification(verification_id):
 if __name__ == '__main__':
 
     app.run(
+
         host='0.0.0.0',
+
         port=5000,
+
         debug=True
+
     )

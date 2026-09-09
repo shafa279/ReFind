@@ -31,6 +31,7 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
       setState(() {
         _isLoading = false;
+        _matches = [];
       });
 
       return;
@@ -42,13 +43,16 @@ class _MatchesScreenState extends State<MatchesScreen> {
       final List<dynamic> allMatches = [];
 
       for (final report in reports) {
-        final itemId = report['id'];
+        final itemId = int.tryParse(
+          report['id'].toString(),
+        );
 
         if (itemId == null) {
           continue;
         }
 
-        final matches = await ApiService.getMatches(itemId);
+        final matches =
+            await ApiService.getMatches(itemId);
 
         allMatches.addAll(matches);
       }
@@ -71,11 +75,14 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth =
+        MediaQuery.of(context).size.width;
+
     final isMobile = screenWidth < 800;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      backgroundColor:
+          const Color(0xFFF7F8FC),
       body: SafeArea(
         child: Column(
           children: [
@@ -86,12 +93,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 20 : 64,
-                  vertical: isMobile ? 28 : 42,
+                  horizontal:
+                      isMobile ? 20 : 64,
+                  vertical:
+                      isMobile ? 28 : 42,
                 ),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(
+                    constraints:
+                        const BoxConstraints(
                       maxWidth: 980,
                     ),
                     child: Column(
@@ -117,10 +127,15 @@ class _MatchesScreenState extends State<MatchesScreen> {
                               .headlineSmall
                               ?.copyWith(
                                 fontSize:
-                                    isMobile ? 22 : 25,
-                                fontWeight: FontWeight.w800,
+                                    isMobile
+                                        ? 22
+                                        : 25,
+                                fontWeight:
+                                    FontWeight.w800,
                                 color:
-                                    const Color(0xFF171A2B),
+                                    const Color(
+                                  0xFF171A2B,
+                                ),
                               ),
                         ),
 
@@ -131,7 +146,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                           style: TextStyle(
                             fontSize: 14,
                             height: 1.5,
-                            color: Color(0xFF686B78),
+                            color:
+                                Color(0xFF686B78),
                           ),
                         ),
 
@@ -140,7 +156,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         if (_isLoading)
                           const Center(
                             child: Padding(
-                              padding: EdgeInsets.symmetric(
+                              padding:
+                                  EdgeInsets.symmetric(
                                 vertical: 60,
                               ),
                               child:
@@ -150,71 +167,20 @@ class _MatchesScreenState extends State<MatchesScreen> {
                         else if (_matches.isEmpty)
                           _buildEmptyState()
                         else
-                          ..._matches.map(
-                            (match) {
-                              final itemId =
-                                  match['id'];
-
-                              return Padding(
-                                padding:
-                                    const EdgeInsets.only(
-                                  bottom: 16,
-                                ),
-                                child: MatchCard(
-                                  itemName:
-                                      match['item_name'] ??
-                                          'Unknown item',
-                                  category:
-                                      match['category'] ??
-                                          'Unknown category',
-                                  location:
-                                      match['location'] ??
-                                          'Unknown location',
-                                  date:
-                                      match['date'] ??
-                                          'Unknown date',
-                                  matchPercentage:
-                                      match['match_score'] ??
-                                          0,
-                                  onPressed: () {
-                                    if (itemId == null) {
-                                      ScaffoldMessenger
-                                              .of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            'Unable to open this item.',
-                                          ),
-                                        ),
-                                      );
-                                      return;
-                                    }
-
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            ItemDetailsScreen(
-                                          itemId: itemId,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            },
-                          ),
+                          ..._buildMatchCards(),
 
                         const SizedBox(height: 8),
 
                         const Center(
                           child: Text(
                             'Private identifying details are never shown in public match cards.',
-                            textAlign: TextAlign.center,
+                            textAlign:
+                                TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
                               height: 1.5,
-                              color: Color(0xFF686B78),
+                              color:
+                                  Color(0xFF686B78),
                             ),
                           ),
                         ),
@@ -232,6 +198,75 @@ class _MatchesScreenState extends State<MatchesScreen> {
     );
   }
 
+  List<Widget> _buildMatchCards() {
+    return _matches.map((match) {
+      final itemId = int.tryParse(
+        match['id'].toString(),
+      );
+
+      final itemName =
+          match['item_name']?.toString() ??
+              'Unknown item';
+
+      final category =
+          match['category']?.toString() ??
+              'Unknown category';
+
+      final location =
+          match['location']?.toString() ??
+              'Unknown location';
+
+      final date =
+          match['date']?.toString() ??
+              'Unknown date';
+
+      final matchScore =
+          int.tryParse(
+                match['match_score']
+                    .toString(),
+              ) ??
+              0;
+
+      return Padding(
+        padding:
+            const EdgeInsets.only(
+          bottom: 16,
+        ),
+        child: MatchCard(
+          itemName: itemName,
+          category: category,
+          location: location,
+          date: date,
+          matchPercentage: matchScore,
+          onPressed: () {
+            if (itemId == null) {
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Unable to open this item.',
+                  ),
+                ),
+              );
+
+              return;
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    ItemDetailsScreen(
+                  itemId: itemId,
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    }).toList();
+  }
+
   Widget _buildHeader(
     BuildContext context,
     bool isMobile,
@@ -244,19 +279,22 @@ class _MatchesScreenState extends State<MatchesScreen> {
       ),
       decoration: BoxDecoration(
         color: const Color(0xFF171A2B),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius:
+            BorderRadius.circular(24),
       ),
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 12,
               vertical: 7,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF6C4EFF),
+              color:
+                  const Color(0xFF6C4EFF),
               borderRadius:
                   BorderRadius.circular(30),
             ),
@@ -265,7 +303,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 11,
-                fontWeight: FontWeight.w800,
+                fontWeight:
+                    FontWeight.w800,
                 letterSpacing: 1,
               ),
             ),
@@ -282,7 +321,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                   color: Colors.white,
                   fontSize:
                       isMobile ? 29 : 36,
-                  fontWeight: FontWeight.w900,
+                  fontWeight:
+                      FontWeight.w900,
                 ),
           ),
 
@@ -291,7 +331,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
           const Text(
             'ReFind compares report details to help identify likely matches across campus.',
             style: TextStyle(
-              color: Color(0xFFD0D2DE),
+              color:
+                  Color(0xFFD0D2DE),
               fontSize: 15,
               height: 1.5,
             ),
@@ -306,19 +347,24 @@ class _MatchesScreenState extends State<MatchesScreen> {
               vertical: 10,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFF252A43),
+              color:
+                  const Color(0xFF252A43),
               borderRadius:
                   BorderRadius.circular(12),
               border: Border.all(
-                color: const Color(0xFF3C4260),
+                color:
+                    const Color(0xFF3C4260),
               ),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize:
+                  MainAxisSize.min,
               children: [
                 const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: Color(0xFFA997FF),
+                  Icons
+                      .auto_awesome_rounded,
+                  color:
+                      Color(0xFFA997FF),
                   size: 18,
                 ),
 
@@ -326,10 +372,12 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
                 Text(
                   '$matchCount possible matches',
-                  style: const TextStyle(
+                  style:
+                      const TextStyle(
                     color: Colors.white,
                     fontSize: 14,
-                    fontWeight: FontWeight.w700,
+                    fontWeight:
+                        FontWeight.w700,
                   ),
                 ),
               ],
@@ -343,13 +391,16 @@ class _MatchesScreenState extends State<MatchesScreen> {
   Widget _buildPrivacyNotice() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding:
+          const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0EBFF),
+        color:
+            const Color(0xFFF0EBFF),
         borderRadius:
             BorderRadius.circular(18),
         border: Border.all(
-          color: const Color(0xFFE1D8FF),
+          color:
+              const Color(0xFFE1D8FF),
         ),
       ),
       child: const Row(
@@ -358,7 +409,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
         children: [
           Icon(
             Icons.lock_outline_rounded,
-            color: Color(0xFF6C4EFF),
+            color:
+                Color(0xFF6C4EFF),
           ),
 
           SizedBox(width: 12),
@@ -371,9 +423,11 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 Text(
                   'Your privacy stays protected',
                   style: TextStyle(
-                    color: Color(0xFF302A55),
+                    color:
+                        Color(0xFF302A55),
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight:
+                        FontWeight.w800,
                   ),
                 ),
 
@@ -382,7 +436,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
                 Text(
                   'These are potential matches, not proof of ownership. Private identifying details remain hidden and are only used during ownership verification.',
                   style: TextStyle(
-                    color: Color(0xFF4D4968),
+                    color:
+                        Color(0xFF4D4968),
                     fontSize: 13,
                     height: 1.5,
                   ),
@@ -398,7 +453,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
+      padding:
+          const EdgeInsets.symmetric(
         vertical: 55,
         horizontal: 20,
       ),
@@ -407,7 +463,8 @@ class _MatchesScreenState extends State<MatchesScreen> {
           Icon(
             Icons.search_off_rounded,
             size: 50,
-            color: Color(0xFF686B78),
+            color:
+                Color(0xFF686B78),
           ),
 
           SizedBox(height: 12),
@@ -416,8 +473,10 @@ class _MatchesScreenState extends State<MatchesScreen> {
             'No potential matches found yet.',
             style: TextStyle(
               fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF171A2B),
+              fontWeight:
+                  FontWeight.w600,
+              color:
+                  Color(0xFF171A2B),
             ),
           ),
 
@@ -425,11 +484,13 @@ class _MatchesScreenState extends State<MatchesScreen> {
 
           Text(
             'ReFind will show possible matches here when they are identified.',
-            textAlign: TextAlign.center,
+            textAlign:
+                TextAlign.center,
             style: TextStyle(
               fontSize: 14,
               height: 1.5,
-              color: Color(0xFF686B78),
+              color:
+                  Color(0xFF686B78),
             ),
           ),
         ],

@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-import '../../widgets/primary_button.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,396 +13,475 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final TextEditingController _collegeIdController =
+      TextEditingController();
 
+  final TextEditingController _passwordController =
+      TextEditingController();
+
+  bool _isLoading = false;
   bool _obscurePassword = true;
+
+  // Flask backend
+  static const String baseUrl = 'http://127.0.0.1:5000';
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _collegeIdController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
-  void _login() {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _login() async {
+    // Check if fields are empty
+    if (_collegeIdController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty) {
+      _showMessage(
+        'Please enter your College ID and password.',
+      );
+      return;
+    }
 
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'user_id': _collegeIdController.text.trim(),
+          'password': _passwordController.text,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (!mounted) return;
+
+      // =========================
+      // LOGIN SUCCESS
+      // =========================
+
+      if (response.statusCode == 200 &&
+          data['success'] == true) {
+        final String userId =
+            data['user_id']?.toString() ??
+                _collegeIdController.text.trim();
+
+        final String role =
+            data['role']?.toString() ?? 'student';
+
+        // Save logged-in user
+        AuthService.setUser(
+          id: userId,
+          userRole: role,
+        );
+
+        _showMessage(
+          'Login successful! Welcome $userId.',
+        );
+
+        // Give the SnackBar a moment to appear
+        await Future.delayed(
+          const Duration(milliseconds: 400),
+        );
+
+        if (!mounted) return;
+
+        // =========================
+        // ADMIN
+        // =========================
+
+        if (role == 'admin') {
+          Navigator.pushReplacementNamed(
+            context,
+            '/admin',
+          );
+        }
+
+        // =========================
+        // STUDENT
+        // =========================
+
+        else {
+          Navigator.pushReplacementNamed(
+            context,
+            '/',
+          );
+        }
+      }
+
+      // =========================
+      // LOGIN FAILED
+      // =========================
+
+      else {
+        _showMessage(
+          data['message'] ??
+              'Invalid College ID or password.',
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      _showMessage(
+        'Could not connect to the ReFind backend.',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Login will be connected to the backend later.'),
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: isMobile ? 20 : 48,
-              vertical: isMobile ? 24 : 48,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 32,
             ),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1050),
-              child: isMobile
-                  ? _buildMobileLayout(context)
-                  : _buildDesktopLayout(context),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+              constraints: const BoxConstraints(
+                maxWidth: 450,
+              ),
+              child: Column(
+                children: [
+                  // =========================
+                  // LOGO
+                  // =========================
 
-  Widget _buildDesktopLayout(BuildContext context) {
-    return SizedBox(
-      height: 620,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(
-            color: const Color(0xFFE8E9F0),
-          ),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x0D000000),
-              blurRadius: 28,
-              offset: Offset(0, 12),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(child: _buildBrandPanel()),
-            SizedBox(
-              width: 470,
-              child: Padding(
-                padding: const EdgeInsets.all(48),
-                child: _buildLoginForm(context),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4F46E5),
+                      borderRadius:
+                          BorderRadius.circular(20),
+                    ),
+                    child: const Icon(
+                      Icons.search_rounded,
+                      color: Colors.white,
+                      size: 38,
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // =========================
+                  // TITLE
+                  // =========================
+
+                  const Text(
+                    'Welcome to ReFind',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF171717),
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  const Text(
+                    'Find it. Verify it. Reclaim it.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+
+                  const SizedBox(height: 36),
+
+                  // =========================
+                  // LOGIN CARD
+                  // =========================
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(28),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color:
+                              Colors.black.withOpacity(0.06),
+                          blurRadius: 25,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF171717),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        const Text(
+                          'Use your College ID to continue.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF6B7280),
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // =========================
+                        // COLLEGE ID
+                        // =========================
+
+                        const Text(
+                          'College ID',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        TextField(
+                          controller:
+                              _collegeIdController,
+                          textInputAction:
+                              TextInputAction.next,
+                          textCapitalization:
+                              TextCapitalization.characters,
+                          decoration: InputDecoration(
+                            hintText:
+                                'Enter your College ID',
+                            prefixIcon: const Icon(
+                              Icons.badge_outlined,
+                            ),
+                            filled: true,
+                            fillColor:
+                                const Color(0xFFF9FAFB),
+                            border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  BorderSide.none,
+                            ),
+                            enabledBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color:
+                                    Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            focusedBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color:
+                                    Color(0xFF4F46E5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // =========================
+                        // PASSWORD
+                        // =========================
+
+                        const Text(
+                          'Password',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF374151),
+                          ),
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        TextField(
+                          controller:
+                              _passwordController,
+                          obscureText:
+                              _obscurePassword,
+                          textInputAction:
+                              TextInputAction.done,
+                          onSubmitted: (_) {
+                            if (!_isLoading) {
+                              _login();
+                            }
+                          },
+                          decoration: InputDecoration(
+                            hintText:
+                                'Enter your password',
+                            prefixIcon: const Icon(
+                              Icons.lock_outline_rounded,
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword =
+                                      !_obscurePassword;
+                                });
+                              },
+                              icon: Icon(
+                                _obscurePassword
+                                    ? Icons
+                                        .visibility_outlined
+                                    : Icons
+                                        .visibility_off_outlined,
+                              ),
+                            ),
+                            filled: true,
+                            fillColor:
+                                const Color(0xFFF9FAFB),
+                            border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  BorderSide.none,
+                            ),
+                            enabledBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color:
+                                    Color(0xFFE5E7EB),
+                              ),
+                            ),
+                            focusedBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color:
+                                    Color(0xFF4F46E5),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 28),
+
+                        // =========================
+                        // LOGIN BUTTON
+                        // =========================
+
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: ElevatedButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () => _login(),
+                            style:
+                                ElevatedButton.styleFrom(
+                              backgroundColor:
+                                  const Color(0xFF4F46E5),
+                              foregroundColor:
+                                  Colors.white,
+                              disabledBackgroundColor:
+                                  const Color(0xFFA5B4FC),
+                              elevation: 0,
+                              shape:
+                                  RoundedRectangleBorder(
+                                borderRadius:
+                                    BorderRadius.circular(14),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child:
+                                        CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                      valueColor:
+                                          AlwaysStoppedAnimation<
+                                              Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Text(
+                                    'Login',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight:
+                                          FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  SizedBox(
+                    height:
+                        size.height < 700 ? 16 : 32,
+                  ),
+
+                  // =========================
+                  // FOOTER
+                  // =========================
+
+                  const Text(
+                    'ReFind • College Lost & Found',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMobileLayout(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildLogo(light: false),
-        const SizedBox(height: 32),
-        const Text(
-          'Welcome back.',
-          style: TextStyle(
-            color: Color(0xFF171A2B),
-            fontSize: 34,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1,
           ),
         ),
-        const SizedBox(height: 10),
-        const Text(
-          'Log in to manage your lost and found reports.',
-          style: TextStyle(
-            color: Color(0xFF686B78),
-            fontSize: 15,
-            height: 1.5,
-          ),
-        ),
-        const SizedBox(height: 28),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: const Color(0xFFE8E9F0),
-            ),
-          ),
-          child: _buildLoginForm(context),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBrandPanel() {
-    return Container(
-      padding: const EdgeInsets.all(48),
-      decoration: const BoxDecoration(
-        color: Color(0xFF171A2B),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(27),
-          bottomLeft: Radius.circular(27),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildLogo(light: true),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 7,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFF6C4EFF),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: const Text(
-              'SMART CAMPUS LOST & FOUND',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.8,
-              ),
-            ),
-          ),
-          const SizedBox(height: 22),
-          const Text(
-            'Lost things deserve a way home.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 38,
-              fontWeight: FontWeight.w900,
-              height: 1.1,
-              letterSpacing: -1,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Log in to manage reports, review potential matches, and verify ownership safely.',
-            style: TextStyle(
-              color: Color(0xFFD0D2DE),
-              fontSize: 15,
-              height: 1.6,
-            ),
-          ),
-          const Spacer(),
-          const Row(
-            children: [
-              Icon(
-                Icons.lock_outline_rounded,
-                color: Color(0xFFA997FF),
-                size: 18,
-              ),
-              SizedBox(width: 9),
-              Text(
-                'Private details stay protected.',
-                style: TextStyle(
-                  color: Color(0xFFD0D2DE),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogo({required bool light}) {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: light
-                ? const Color(0xFF6C4EFF)
-                : const Color(0xFF171A2B),
-            borderRadius: BorderRadius.circular(13),
-          ),
-          child: const Icon(
-            Icons.arrow_outward_rounded,
-            color: Colors.white,
-            size: 25,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Text(
-          'ReFind',
-          style: TextStyle(
-            color: light ? Colors.white : const Color(0xFF171A2B),
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildLoginForm(BuildContext context) {
-    return Form(
-      key: _formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Log in to your account',
-            style: TextStyle(
-              color: Color(0xFF171A2B),
-              fontSize: 25,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Use your college email to continue.',
-            style: TextStyle(
-              color: Color(0xFF686B78),
-              fontSize: 14,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 30),
-          const _InputLabel(label: 'College Email'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _emailController,
-            keyboardType: TextInputType.emailAddress,
-            autofillHints: const [AutofillHints.email],
-            validator: (value) {
-              final email = value?.trim() ?? '';
-
-              if (email.isEmpty) return 'Enter your college email.';
-              if (!email.contains('@')) return 'Enter a valid email address.';
-
-              return null;
-            },
-            decoration: _inputDecoration(
-              hintText: 'you@college.edu',
-              icon: Icons.email_outlined,
-            ),
-          ),
-          const SizedBox(height: 22),
-          const _InputLabel(label: 'Password'),
-          const SizedBox(height: 8),
-          TextFormField(
-            controller: _passwordController,
-            obscureText: _obscurePassword,
-            autofillHints: const [AutofillHints.password],
-            validator: (value) {
-              if (value?.trim().isEmpty ?? true) {
-                return 'Enter your password.';
-              }
-
-              return null;
-            },
-            decoration: _inputDecoration(
-              hintText: 'Enter your password',
-              icon: Icons.lock_outline_rounded,
-              suffixIcon: IconButton(
-                onPressed: () {
-                  setState(() {
-                    _obscurePassword = !_obscurePassword;
-                  });
-                },
-                icon: Icon(
-                  _obscurePassword
-                      ? Icons.visibility_outlined
-                      : Icons.visibility_off_outlined,
-                ),
-                tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          PrimaryButton(
-            text: 'Log In',
-            icon: Icons.login_rounded,
-            fullWidth: true,
-            onPressed: _login,
-          ),
-          const SizedBox(height: 18),
-          const Center(
-            child: Text(
-              'Authentication will be connected to the backend.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF8A8D99),
-                fontSize: 12,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: TextButton.icon(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.arrow_back_rounded),
-              label: const Text('Back to Home'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  InputDecoration _inputDecoration({
-    required String hintText,
-    required IconData icon,
-    Widget? suffixIcon,
-  }) {
-    return InputDecoration(
-      hintText: hintText,
-      prefixIcon: Icon(
-        icon,
-        color: const Color(0xFF686B78),
-      ),
-      suffixIcon: suffixIcon,
-      filled: true,
-      fillColor: const Color(0xFFF9FAFC),
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 16,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(color: Color(0xFFE1E3EA)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(color: Color(0xFFE1E3EA)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(13),
-        borderSide: const BorderSide(
-          color: Color(0xFF6C4EFF),
-          width: 1.5,
-        ),
-      ),
-    );
-  }
-}
-
-class _InputLabel extends StatelessWidget {
-  final String label;
-
-  const _InputLabel({
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        color: Color(0xFF171A2B),
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
       ),
     );
   }

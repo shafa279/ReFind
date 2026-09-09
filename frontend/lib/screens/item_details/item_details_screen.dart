@@ -14,10 +14,12 @@ class ItemDetailsScreen extends StatefulWidget {
   });
 
   @override
-  State<ItemDetailsScreen> createState() => _ItemDetailsScreenState();
+  State<ItemDetailsScreen> createState() =>
+      _ItemDetailsScreenState();
 }
 
-class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
+class _ItemDetailsScreenState
+    extends State<ItemDetailsScreen> {
   bool _isLoading = true;
   bool _isClaiming = false;
 
@@ -53,9 +55,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   }
 
   Future<void> _claimItem() async {
-    final userId = AuthService.userId;
+    final claimantId = AuthService.userId;
 
-    if (userId == null) {
+    if (claimantId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -70,13 +72,28 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       return;
     }
 
+    final reporterId =
+        _item!['reporter_id']?.toString();
+
+    if (reporterId == null || reporterId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to identify the item reporter.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _isClaiming = true;
     });
 
     final result = await ApiService.createClaim(
       itemId: widget.itemId,
-      claimantId: userId,
+      claimantId: claimantId,
+      reporterId: reporterId,
     );
 
     if (!mounted) {
@@ -132,32 +149,40 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     final item = _item!;
 
     final itemName =
-        item['item_name'] ?? 'Unknown item';
+        item['item_name']?.toString() ??
+            'Unknown item';
 
     final category =
-        item['category'] ?? 'Unknown category';
+        item['category']?.toString() ??
+            'Unknown category';
 
     final location =
-        item['location'] ?? 'Unknown location';
+        item['location']?.toString() ??
+            'Unknown location';
 
     final date =
-        item['date'] ?? 'Unknown date';
+        item['date']?.toString() ??
+            'Unknown date';
 
     final time =
-        item['time'] ?? 'Unknown time';
+        item['time']?.toString() ??
+            'Unknown time';
 
     final publicDetails =
-        item['public_details'] ??
+        item['public_details']?.toString() ??
             'No public details available.';
 
     final status =
-        item['status'] ?? 'Searching';
+        item['status']?.toString() ??
+            'Searching';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextButton.icon(
-          onPressed: () => Navigator.pop(context),
+          onPressed: () {
+            Navigator.pop(context);
+          },
           icon: const Icon(
             Icons.arrow_back_rounded,
           ),
@@ -209,7 +234,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               const SizedBox(height: 25),
 
               Text(
-                itemName.toString(),
+                itemName,
                 style: const TextStyle(
                   fontSize: 25,
                   fontWeight: FontWeight.w900,
@@ -220,7 +245,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               const SizedBox(height: 8),
 
               Text(
-                category.toString(),
+                category,
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF686B78),
@@ -232,7 +257,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               _DetailRow(
                 icon: Icons.location_on_outlined,
                 title: 'Location',
-                value: location.toString(),
+                value: location,
               ),
 
               const SizedBox(height: 15),
@@ -240,7 +265,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               _DetailRow(
                 icon: Icons.calendar_today_outlined,
                 title: 'Date',
-                value: date.toString(),
+                value: date,
               ),
 
               const SizedBox(height: 15),
@@ -248,7 +273,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               _DetailRow(
                 icon: Icons.access_time_outlined,
                 title: 'Approximate Time',
-                value: time.toString(),
+                value: time,
               ),
 
               const SizedBox(height: 15),
@@ -256,7 +281,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               _DetailRow(
                 icon: Icons.info_outline_rounded,
                 title: 'Status',
-                value: status.toString(),
+                value: status,
               ),
 
               const SizedBox(height: 25),
@@ -271,7 +296,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               const SizedBox(height: 12),
 
               Text(
-                publicDetails.toString(),
+                publicDetails,
                 style: const TextStyle(
                   fontSize: 15,
                   height: 1.5,
@@ -382,7 +407,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 : 'Claim This Item',
             icon: Icons.assignment_turned_in_outlined,
             fullWidth: true,
-            onPressed: _claimItem,
+            onPressed: () {
+              if (!_isClaiming) {
+                _claimItem();
+              }
+            },
           ),
         ),
 

@@ -1,47 +1,88 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/app_navigation.dart';
 import '../../widgets/match_card.dart';
 import '../item_details/item_details_screen.dart';
 
-class MatchesScreen extends StatelessWidget {
+class MatchesScreen extends StatefulWidget {
   const MatchesScreen({super.key});
+
+  @override
+  State<MatchesScreen> createState() => _MatchesScreenState();
+}
+
+class _MatchesScreenState extends State<MatchesScreen> {
+  bool _isLoading = true;
+  List<dynamic> _matches = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMatches();
+  }
+
+  Future<void> _loadMatches() async {
+    final userId = AuthService.userId;
+
+    if (userId == null) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      return;
+    }
+
+    try {
+      final reports = await ApiService.getMyReports(userId);
+
+      final List<dynamic> allMatches = [];
+
+      for (final report in reports) {
+        final itemId = report['id'];
+
+        if (itemId == null) {
+          continue;
+        }
+
+        final matches = await ApiService.getMatches(itemId);
+
+        allMatches.addAll(matches);
+      }
+
+      if (!mounted) return;
+
+      setState(() {
+        _matches = allMatches;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _matches = [];
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
 
-    final matches = [
-      const _MatchData(
-        itemName: 'Black Wireless Headphones',
-        category: 'Electronics',
-        location: 'Central Library',
-        date: '5 September 2026',
-        matchPercentage: 94,
-      ),
-      const _MatchData(
-        itemName: 'Wireless Headphones',
-        category: 'Electronics',
-        location: 'Student Block',
-        date: '4 September 2026',
-        matchPercentage: 81,
-      ),
-      const _MatchData(
-        itemName: 'Black Bluetooth Headset',
-        category: 'Electronics',
-        location: 'Cafeteria',
-        date: '3 September 2026',
-        matchPercentage: 68,
-      ),
-    ];
-
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
         child: Column(
           children: [
-            const AppNavigation(currentPage: 'Matches'),
+            const AppNavigation(
+              currentPage: 'Matches',
+            ),
+
             Expanded(
               child: SingleChildScrollView(
                 padding: EdgeInsets.symmetric(
@@ -50,24 +91,41 @@ class MatchesScreen extends StatelessWidget {
                 ),
                 child: Center(
                   child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 980),
+                    constraints: const BoxConstraints(
+                      maxWidth: 980,
+                    ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
-                        _buildHeader(context, isMobile, matches.length),
+                        _buildHeader(
+                          context,
+                          isMobile,
+                          _matches.length,
+                        ),
+
                         const SizedBox(height: 24),
+
                         _buildPrivacyNotice(),
+
                         const SizedBox(height: 28),
+
                         Text(
                           'Matches for your report',
-                          style:
-                              Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontSize: isMobile ? 22 : 25,
-                                    fontWeight: FontWeight.w800,
-                                    color: const Color(0xFF171A2B),
-                                  ),
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                fontSize:
+                                    isMobile ? 22 : 25,
+                                fontWeight: FontWeight.w800,
+                                color:
+                                    const Color(0xFF171A2B),
+                              ),
                         ),
+
                         const SizedBox(height: 8),
+
                         const Text(
                           'Review each possible match and start verification only when the item appears to be yours.',
                           style: TextStyle(
@@ -76,28 +134,79 @@ class MatchesScreen extends StatelessWidget {
                             color: Color(0xFF686B78),
                           ),
                         ),
+
                         const SizedBox(height: 20),
-                        ...matches.map(
-                          (match) => Padding(
-                            padding: const EdgeInsets.only(bottom: 16),
-                            child: MatchCard(
-                              itemName: match.itemName,
-                              category: match.category,
-                              location: match.location,
-                              date: match.date,
-                              matchPercentage: match.matchPercentage,
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const ItemDetailsScreen(),
-                                  ),
-                                );
-                              },
+
+                        if (_isLoading)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                vertical: 60,
+                              ),
+                              child:
+                                  CircularProgressIndicator(),
                             ),
+                          )
+                        else if (_matches.isEmpty)
+                          _buildEmptyState()
+                        else
+                          ..._matches.map(
+                            (match) {
+                              final itemId =
+                                  match['id'];
+
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.only(
+                                  bottom: 16,
+                                ),
+                                child: MatchCard(
+                                  itemName:
+                                      match['item_name'] ??
+                                          'Unknown item',
+                                  category:
+                                      match['category'] ??
+                                          'Unknown category',
+                                  location:
+                                      match['location'] ??
+                                          'Unknown location',
+                                  date:
+                                      match['date'] ??
+                                          'Unknown date',
+                                  matchPercentage:
+                                      match['match_score'] ??
+                                          0,
+                                  onPressed: () {
+                                    if (itemId == null) {
+                                      ScaffoldMessenger
+                                              .of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            'Unable to open this item.',
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            ItemDetailsScreen(
+                                          itemId: itemId,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
                           ),
-                        ),
+
                         const SizedBox(height: 8),
+
                         const Center(
                           child: Text(
                             'Private identifying details are never shown in public match cards.',
@@ -109,6 +218,7 @@ class MatchesScreen extends StatelessWidget {
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 28),
                       ],
                     ),
@@ -129,13 +239,16 @@ class MatchesScreen extends StatelessWidget {
   ) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(isMobile ? 22 : 30),
+      padding: EdgeInsets.all(
+        isMobile ? 22 : 30,
+      ),
       decoration: BoxDecoration(
         color: const Color(0xFF171A2B),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Container(
             padding: const EdgeInsets.symmetric(
@@ -144,7 +257,8 @@ class MatchesScreen extends StatelessWidget {
             ),
             decoration: BoxDecoration(
               color: const Color(0xFF6C4EFF),
-              borderRadius: BorderRadius.circular(30),
+              borderRadius:
+                  BorderRadius.circular(30),
             ),
             child: const Text(
               'MATCH RESULTS',
@@ -156,16 +270,24 @@ class MatchesScreen extends StatelessWidget {
               ),
             ),
           ),
+
           const SizedBox(height: 18),
+
           Text(
             'Potential matches found',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(
                   color: Colors.white,
-                  fontSize: isMobile ? 29 : 36,
+                  fontSize:
+                      isMobile ? 29 : 36,
                   fontWeight: FontWeight.w900,
                 ),
           ),
+
           const SizedBox(height: 10),
+
           const Text(
             'ReFind compares report details to help identify likely matches across campus.',
             style: TextStyle(
@@ -174,15 +296,19 @@ class MatchesScreen extends StatelessWidget {
               height: 1.5,
             ),
           ),
+
           const SizedBox(height: 22),
+
           Container(
-            padding: const EdgeInsets.symmetric(
+            padding:
+                const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 10,
             ),
             decoration: BoxDecoration(
               color: const Color(0xFF252A43),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+                  BorderRadius.circular(12),
               border: Border.all(
                 color: const Color(0xFF3C4260),
               ),
@@ -195,7 +321,9 @@ class MatchesScreen extends StatelessWidget {
                   color: Color(0xFFA997FF),
                   size: 18,
                 ),
+
                 const SizedBox(width: 8),
+
                 Text(
                   '$matchCount possible matches',
                   style: const TextStyle(
@@ -218,22 +346,27 @@ class MatchesScreen extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: const Color(0xFFF0EBFF),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius:
+            BorderRadius.circular(18),
         border: Border.all(
           color: const Color(0xFFE1D8FF),
         ),
       ),
       child: const Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.lock_outline_rounded,
             color: Color(0xFF6C4EFF),
           ),
+
           SizedBox(width: 12),
+
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   'Your privacy stays protected',
@@ -243,7 +376,9 @@ class MatchesScreen extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+
                 SizedBox(height: 5),
+
                 Text(
                   'These are potential matches, not proof of ownership. Private identifying details remain hidden and are only used during ownership verification.',
                   style: TextStyle(
@@ -259,20 +394,46 @@ class MatchesScreen extends StatelessWidget {
       ),
     );
   }
-}
 
-class _MatchData {
-  final String itemName;
-  final String category;
-  final String location;
-  final String date;
-  final int matchPercentage;
+  Widget _buildEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        vertical: 55,
+        horizontal: 20,
+      ),
+      child: const Column(
+        children: [
+          Icon(
+            Icons.search_off_rounded,
+            size: 50,
+            color: Color(0xFF686B78),
+          ),
 
-  const _MatchData({
-    required this.itemName,
-    required this.category,
-    required this.location,
-    required this.date,
-    required this.matchPercentage,
-  });
+          SizedBox(height: 12),
+
+          Text(
+            'No potential matches found yet.',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF171A2B),
+            ),
+          ),
+
+          SizedBox(height: 8),
+
+          Text(
+            'ReFind will show possible matches here when they are identified.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.5,
+              color: Color(0xFF686B78),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -1,11 +1,170 @@
 import 'package:flutter/material.dart';
 
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/app_navigation.dart';
 import '../../widgets/primary_button.dart';
 import '../report/report_item_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool hasUnreadNotifications = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkNotifications();
+  }
+
+  // =========================
+  // CHECK UNREAD NOTIFICATIONS
+  // =========================
+
+  Future<void> _checkNotifications() async {
+    final userId = AuthService.userId;
+
+    if (userId == null) {
+      return;
+    }
+
+    final notifications = await ApiService.getNotifications(userId);
+
+    if (!mounted) return;
+
+    final hasUnread = notifications.any(
+      (notification) => notification['read'] == 0,
+    );
+
+    setState(() {
+      hasUnreadNotifications = hasUnread;
+    });
+  }
+
+  // =========================
+  // SHOW NOTIFICATIONS
+  // =========================
+
+  Future<void> _showNotifications(BuildContext context) async {
+    final userId = AuthService.userId;
+
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to view notifications.'),
+        ),
+      );
+      return;
+    }
+
+    final notifications = await ApiService.getNotifications(userId);
+
+    if (!mounted) return;
+
+    // Mark unread notifications as read
+    for (final notification in notifications) {
+      final isUnread = notification['read'] == 0;
+      final notificationId = notification['id'];
+
+      if (isUnread && notificationId != null) {
+        await ApiService.markNotificationAsRead(notificationId);
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      hasUnreadNotifications = false;
+    });
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(
+                Icons.notifications_rounded,
+                color: Color(0xFF6C4EFF),
+              ),
+              SizedBox(width: 10),
+              Text('Notifications'),
+            ],
+          ),
+          content: SizedBox(
+            width: 420,
+            child: notifications.isEmpty
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(
+                      vertical: 20,
+                    ),
+                    child: Text(
+                      'You have no notifications.',
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: notifications.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 20),
+                    itemBuilder: (context, index) {
+                      final notification = notifications[index];
+
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(
+                          width: 42,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEDEBFF),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.notifications_none_rounded,
+                            color: Color(0xFF6C4EFF),
+                          ),
+                        ),
+                        title: Text(
+                          notification['message'] ??
+                              'New notification',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        subtitle: notification['created_at'] != null
+                            ? Padding(
+                                padding: const EdgeInsets.only(top: 5),
+                                child: Text(
+                                  notification['created_at'].toString(),
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF686B78),
+                                  ),
+                                ),
+                              )
+                            : null,
+                      );
+                    },
+                  ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext);
+              },
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +178,46 @@ class HomeScreen extends StatelessWidget {
             const AppNavigation(
               currentPage: 'Home',
             ),
+
+            // Notification button
+            Align(
+              alignment: Alignment.centerRight,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: isMobile ? 20 : 70,
+                  top: 8,
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        _showNotifications(context);
+                      },
+                      tooltip: 'Notifications',
+                      icon: const Icon(
+                        Icons.notifications_none_rounded,
+                        color: Color(0xFF171A2B),
+                      ),
+                    ),
+                    if (hasUnreadNotifications)
+                      Positioned(
+                        right: 7,
+                        top: 6,
+                        child: Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
@@ -44,7 +243,9 @@ class HomeScreen extends StatelessWidget {
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
+          constraints: const BoxConstraints(
+            maxWidth: 1000,
+          ),
           child: Column(
             children: [
               Container(
@@ -66,16 +267,23 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               const SizedBox(height: 25),
+
               Text(
                 'LOST SOMETHING?\nLET\'S FIND IT.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineLarge
+                    ?.copyWith(
                       fontSize: isMobile ? 38 : 58,
                       height: 1.05,
                     ),
               ),
+
               const SizedBox(height: 18),
+
               const Text(
                 'Find it. Verify it. Reclaim it.',
                 textAlign: TextAlign.center,
@@ -85,7 +293,9 @@ class HomeScreen extends StatelessWidget {
                   color: Color(0xFF6C4EFF),
                 ),
               ),
+
               const SizedBox(height: 18),
+
               const Text(
                 'Lost something on campus? Found something that isn\'t yours? '
                 'ReFind helps connect the two — simply, safely and intelligently.',
@@ -96,7 +306,9 @@ class HomeScreen extends StatelessWidget {
                   color: Color(0xFF686B78),
                 ),
               ),
+
               const SizedBox(height: 35),
+
               Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 12,
@@ -116,6 +328,7 @@ class HomeScreen extends StatelessWidget {
                       );
                     },
                   ),
+
                   OutlinedButton.icon(
                     onPressed: () {
                       Navigator.push(
@@ -127,8 +340,12 @@ class HomeScreen extends StatelessWidget {
                         ),
                       );
                     },
-                    icon: const Icon(Icons.inventory_2_outlined),
-                    label: const Text('I Found Something'),
+                    icon: const Icon(
+                      Icons.inventory_2_outlined,
+                    ),
+                    label: const Text(
+                      'I Found Something',
+                    ),
                   ),
                 ],
               ),
@@ -139,7 +356,10 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatures(BuildContext context, bool isMobile) {
+  Widget _buildFeatures(
+    BuildContext context,
+    bool isMobile,
+  ) {
     final features = [
       const _FeatureData(
         icon: Icons.auto_awesome_rounded,
@@ -170,14 +390,18 @@ class HomeScreen extends StatelessWidget {
       color: Colors.white,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1100),
+          constraints: const BoxConstraints(
+            maxWidth: 1100,
+          ),
           child: Column(
             children: [
               Text(
                 'Why ReFind?',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
+
               const SizedBox(height: 10),
+
               const Text(
                 'Designed to make campus lost-and-found faster, safer and smarter.',
                 textAlign: TextAlign.center,
@@ -186,7 +410,9 @@ class HomeScreen extends StatelessWidget {
                   fontSize: 15,
                 ),
               ),
+
               const SizedBox(height: 35),
+
               LayoutBuilder(
                 builder: (context, constraints) {
                   if (constraints.maxWidth < 700) {
@@ -194,7 +420,8 @@ class HomeScreen extends StatelessWidget {
                       children: features
                           .map(
                             (feature) => Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding:
+                                  const EdgeInsets.only(bottom: 16),
                               child: _FeatureCard(
                                 feature: feature,
                               ),
@@ -205,13 +432,16 @@ class HomeScreen extends StatelessWidget {
                   }
 
                   return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
                     children: features
                         .map(
                           (feature) => Expanded(
                             child: Padding(
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 8),
+                                  const EdgeInsets.symmetric(
+                                horizontal: 8,
+                              ),
                               child: _FeatureCard(
                                 feature: feature,
                               ),
@@ -261,6 +491,10 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+// =========================
+// FEATURE DATA
+// =========================
+
 class _FeatureData {
   final IconData icon;
   final String title;
@@ -272,6 +506,10 @@ class _FeatureData {
     required this.description,
   });
 }
+
+// =========================
+// FEATURE CARD
+// =========================
 
 class _FeatureCard extends StatelessWidget {
   final _FeatureData feature;
@@ -307,7 +545,9 @@ class _FeatureCard extends StatelessWidget {
               size: 23,
             ),
           ),
+
           const SizedBox(height: 18),
+
           Text(
             feature.title,
             style: const TextStyle(
@@ -316,7 +556,9 @@ class _FeatureCard extends StatelessWidget {
               color: Color(0xFF171A2B),
             ),
           ),
+
           const SizedBox(height: 10),
+
           Text(
             feature.description,
             style: const TextStyle(

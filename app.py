@@ -378,7 +378,8 @@ def get_items():
 
             items.append({
 
-                'id': row['id'],
+                'id':
+                    row['id'],
 
                 'reporter_id':
                     row['reporter_id'],
@@ -468,7 +469,6 @@ def get_matches(item_id):
 
             }), 404
 
-        # Resolved items should not be matched
         if item['status'] != 'Searching':
 
             return jsonify({
@@ -479,9 +479,7 @@ def get_matches(item_id):
 
             })
 
-        # IMPORTANT:
-        # find_matches() expects the complete item object,
-        # not just the item ID.
+        # find_matches() expects the complete item object
         matches = find_matches(item)
 
         return jsonify({
@@ -657,7 +655,8 @@ def create_claim():
             'message':
                 'Claim submitted successfully',
 
-            'claim_id': claim_id
+            'claim_id':
+                claim_id
 
         }), 201
 
@@ -682,6 +681,14 @@ def create_claim():
 # =========================================================
 # GET CLAIMS
 # =========================================================
+#
+# IMPORTANT:
+# This route now joins the claims table with the
+# verifications table.
+#
+# This allows Flutter to know whether verification
+# has been submitted and obtain the verification ID.
+# =========================================================
 
 @app.route(
     '/api/claims/<int:item_id>',
@@ -695,10 +702,28 @@ def get_claims(item_id):
 
         claims = connection.execute("""
 
-            SELECT *
-            FROM claims
-            WHERE item_id = ?
-            ORDER BY id DESC
+            SELECT
+                c.id,
+                c.item_id,
+                c.claimant_id,
+                c.reporter_id,
+                c.status,
+                c.created_at,
+
+                v.id AS verification_id,
+                v.status AS verification_status,
+                v.verification_details,
+                v.created_at AS verification_created_at,
+                v.reviewed_at AS verification_reviewed_at
+
+            FROM claims c
+
+            LEFT JOIN verifications v
+                ON c.id = v.claim_id
+
+            WHERE c.item_id = ?
+
+            ORDER BY c.id DESC
 
         """, (item_id,)).fetchall()
 
@@ -724,7 +749,22 @@ def get_claims(item_id):
                     claim['status'],
 
                 'created_at':
-                    claim['created_at']
+                    claim['created_at'],
+
+                'verification_id':
+                    claim['verification_id'],
+
+                'verification_status':
+                    claim['verification_status'],
+
+                'verification_details':
+                    claim['verification_details'],
+
+                'verification_created_at':
+                    claim['verification_created_at'],
+
+                'verification_reviewed_at':
+                    claim['verification_reviewed_at']
 
             })
 
@@ -1269,6 +1309,7 @@ def review_verification(verification_id):
 
             """, (item_id,))
 
+            # Notify claimant
             connection.execute("""
 
                 INSERT INTO notifications (
@@ -1293,6 +1334,7 @@ def review_verification(verification_id):
 
             ))
 
+            # Remove other notifications for this item
             connection.execute("""
 
                 DELETE FROM notifications
@@ -1309,6 +1351,7 @@ def review_verification(verification_id):
 
             ))
 
+            # Remove other verification records
             connection.execute("""
 
                 DELETE FROM verifications
@@ -1325,6 +1368,7 @@ def review_verification(verification_id):
 
             ))
 
+            # Remove other claims
             connection.execute("""
 
                 DELETE FROM claims
@@ -1341,6 +1385,7 @@ def review_verification(verification_id):
 
             ))
 
+            # Delete approved verification
             connection.execute("""
 
                 DELETE FROM verifications
@@ -1349,6 +1394,7 @@ def review_verification(verification_id):
 
             """, (verification_id,))
 
+            # Delete approved claim
             connection.execute("""
 
                 DELETE FROM claims
@@ -1357,6 +1403,7 @@ def review_verification(verification_id):
 
             """, (claim_id,))
 
+            # Delete resolved item
             connection.execute("""
 
                 DELETE FROM items
@@ -1365,6 +1412,7 @@ def review_verification(verification_id):
 
             """, (item_id,))
 
+            # Delete uploaded image
             if image_path:
 
                 try:

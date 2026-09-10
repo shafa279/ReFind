@@ -6,10 +6,10 @@ def clean_text(text):
     if not text:
         return set()
 
-    text = text.lower()
+    text = str(text).lower()
+
     words = re.findall(r"[a-z0-9]+", text)
 
-    # Ignore very common words
     stop_words = {
         "the", "a", "an", "and", "or", "with",
         "in", "on", "at", "near", "my", "is",
@@ -17,7 +17,8 @@ def clean_text(text):
     }
 
     return {
-        word for word in words
+        word
+        for word in words
         if word not in stop_words
     }
 
@@ -31,83 +32,149 @@ def text_similarity(text1, text2):
         return 0
 
     common_words = words1.intersection(words2)
+    union_words = words1.union(words2)
 
-    # Jaccard similarity
-    similarity = len(common_words) / len(words1.union(words2))
+    if not union_words:
+        return 0
 
-    return similarity
+    return len(common_words) / len(union_words)
 
 
 def calculate_match_score(lost_item, found_item):
+    """Calculate a match score between a lost and found item."""
+
     score = 0
 
-    # -------------------------
+    # ---------------------------------------------------------
     # 1. CATEGORY - 25 POINTS
-    # -------------------------
-    if lost_item["category"].lower() == found_item["category"].lower():
+    # ---------------------------------------------------------
+    lost_category = str(
+        lost_item["category"] or ""
+    ).strip().lower()
+
+    found_category = str(
+        found_item["category"] or ""
+    ).strip().lower()
+
+    if lost_category and lost_category == found_category:
         score += 25
 
-    # -------------------------
+    # ---------------------------------------------------------
     # 2. LOCATION - 25 POINTS
-    # -------------------------
-    lost_location = clean_text(lost_item["location"])
-    found_location = clean_text(found_item["location"])
+    # ---------------------------------------------------------
+    lost_location = clean_text(
+        lost_item["location"]
+    )
+
+    found_location = clean_text(
+        found_item["location"]
+    )
 
     if lost_location and found_location:
-        if lost_location.intersection(found_location):
+
+        # Exact location
+        if lost_location == found_location:
             score += 25
 
-    # -------------------------
+        # Any common location word
+        elif lost_location.intersection(found_location):
+            score += 20
+
+    # ---------------------------------------------------------
     # 3. DATE - 20 POINTS
-    # -------------------------
-    if lost_item["date"] == found_item["date"]:
+    # ---------------------------------------------------------
+    lost_date = str(
+        lost_item["date"] or ""
+    ).strip()
+
+    found_date = str(
+        found_item["date"] or ""
+    ).strip()
+
+    if lost_date and lost_date == found_date:
         score += 20
 
-    # -------------------------
+    # ---------------------------------------------------------
     # 4. TIME - 10 POINTS
-    # -------------------------
-    if lost_item["time"] and found_item["time"]:
+    # ---------------------------------------------------------
+    lost_time = str(
+        lost_item["time"] or ""
+    ).strip()
 
-        if lost_item["time"] == found_item["time"]:
+    found_time = str(
+        found_item["time"] or ""
+    ).strip()
+
+    if lost_time and found_time:
+
+        # Exact time
+        if lost_time == found_time:
             score += 10
 
         else:
-            # Compare hours if exact time is different
-            lost_hour = lost_item["time"].split(":")[0]
-            found_hour = found_item["time"].split(":")[0]
+            # Compare hours
+            lost_hour = lost_time.split(":")[0]
+            found_hour = found_time.split(":")[0]
 
             if lost_hour == found_hour:
                 score += 5
 
-    # -------------------------
+    # ---------------------------------------------------------
     # 5. DESCRIPTION - 20 POINTS
-    # -------------------------
-    similarity = text_similarity(
-        lost_item["public_details"],
-        found_item["public_details"]
+    # ---------------------------------------------------------
+    lost_description = (
+        lost_item["public_details"]
+        or ""
     )
 
-    description_score = round(similarity * 20)
+    found_description = (
+        found_item["public_details"]
+        or ""
+    )
+
+    similarity = text_similarity(
+        lost_description,
+        found_description
+    )
+
+    description_score = round(
+        similarity * 20
+    )
 
     score += description_score
 
+    # ---------------------------------------------------------
+    # MAXIMUM SCORE = 100
+    # ---------------------------------------------------------
     return min(score, 100)
 
 
 def find_matches(item):
+    """Find potential matches for a lost/found item."""
+
     from backend.database import get_db_connection
 
     connection = get_db_connection()
 
-    # Lost searches Found.
-    # Found searches Lost.
-    opposite_type = (
-        "Found"
-        if item["item_type"] == "Lost"
-        else "Lost"
-    )
+    # ---------------------------------------------------------
+    # LOST -> SEARCH FOUND
+    # FOUND -> SEARCH LOST
+    # ---------------------------------------------------------
+    item_type = str(
+        item["item_type"]
+    ).strip().lower()
 
-    matches = connection.execute("""
+    if item_type == "lost":
+        opposite_type = "Found"
+
+    else:
+        opposite_type = "Lost"
+
+    # ---------------------------------------------------------
+    # GET OPPOSITE ITEMS
+    # ---------------------------------------------------------
+    matches = connection.execute(
+        """
         SELECT
             id,
             item_type,
@@ -120,21 +187,35 @@ def find_matches(item):
             image_path,
             status
         FROM items
-        WHERE item_type = ?
+        WHERE LOWER(item_type) = LOWER(?)
         AND status = 'Searching'
         AND id != ?
-    """, (opposite_type, item["id"])).fetchall()
+        """,
+        (
+            opposite_type,
+            item["id"],
+        ),
+    ).fetchall()
 
     connection.close()
 
     results = []
 
+    # ---------------------------------------------------------
+    # CALCULATE MATCHES
+    # ---------------------------------------------------------
     for match in matches:
 
-        score = calculate_match_score(item, match)
+        score = calculate_match_score(
+            item,
+            match
+        )
 
-        # Only show reasonably likely matches
-        if score >= 40:
+        # -----------------------------------------------------
+        # LOWER THRESHOLD FOR MORE POTENTIAL MATCHES
+        # -----------------------------------------------------
+        if score >= 20:
+
             results.append({
                 "id": match["id"],
                 "item_name": match["item_name"],
@@ -144,13 +225,15 @@ def find_matches(item):
                 "time": match["time"],
                 "image_path": match["image_path"],
                 "status": match["status"],
-                "match_score": score
+                "match_score": score,
             })
 
-    # Highest score first
+    # ---------------------------------------------------------
+    # HIGHEST SCORE FIRST
+    # ---------------------------------------------------------
     results.sort(
         key=lambda x: x["match_score"],
-        reverse=True
+        reverse=True,
     )
 
     return results

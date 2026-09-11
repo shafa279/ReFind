@@ -55,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (data['success'] == true) {
         final String userId =
             data['user_id']?.toString() ??
-                _collegeIdController.text.trim();
+            _collegeIdController.text.trim();
 
         final String role =
             data['role']?.toString() ?? 'student';
@@ -120,6 +120,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  // =========================
+  // BUILD
+  // =========================
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -152,14 +156,9 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 1050,
-              ),
-              child: isMobile
-                  ? _buildMobileLayout(context)
-                  : _buildDesktopLayout(context),
-            ),
+            child: isMobile
+                ? _buildMobileLayout(context)
+                : _buildDesktopLayout(context),
           ),
         ),
       ),
@@ -167,20 +166,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // =========================
-  // DESKTOP LAYOUT
+  // DESKTOP
   // =========================
 
   Widget _buildDesktopLayout(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(
-        minHeight: 560,
-      ),
+      width: 1050,
+      height: 560,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 30,
             offset: const Offset(0, 12),
           ),
@@ -190,11 +188,10 @@ class _LoginScreenState extends State<LoginScreen> {
       child: Row(
         children: [
           // =========================
-          // LEFT BLUE SECTION
+          // LEFT SIDE
           // =========================
 
           Expanded(
-            flex: 5,
             child: Container(
               padding: const EdgeInsets.all(48),
               decoration: const BoxDecoration(
@@ -202,14 +199,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF101936),
-                    Color(0xFF193B86),
-                    Color(0xFF2864C7),
+                    Color.fromARGB(255, 2, 13, 49),
+                    Color.fromARGB(255, 3, 17, 46),
+                    Color.fromARGB(255, 16, 38, 71),
                   ],
                 ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   // LOGO
                   Row(
@@ -249,11 +247,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
+                      color: Colors.white.withValues(
+                        alpha: 0.12,
+                      ),
                       borderRadius:
                           BorderRadius.circular(30),
                       border: Border.all(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(
+                          alpha: 0.15,
+                        ),
                       ),
                     ),
                     child: const Text(
@@ -269,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 22),
 
-                  // MAIN HEADING
+                  // HEADING
                   const Text(
                     'Lost things deserve\na way home.',
                     style: TextStyle(
@@ -294,15 +296,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  const SizedBox(height: 35),
+                  const Spacer(),
 
-                  // PRIVATE DETAILS
+                  // SECURITY
                   Row(
                     children: [
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(
+                            alpha: 0.10,
+                          ),
                           borderRadius:
                               BorderRadius.circular(10),
                         ),
@@ -328,15 +332,14 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
 
           // =========================
-          // RIGHT LOGIN SECTION
+          // RIGHT SIDE
           // =========================
 
           Expanded(
-            flex: 5,
             child: Container(
               padding: const EdgeInsets.symmetric(
                 horizontal: 55,
-                vertical: 55,
+                vertical: 50,
               ),
               color: Colors.white,
               child: _buildLoginForm(context),
@@ -348,18 +351,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // =========================
-  // MOBILE LAYOUT
+  // MOBILE
   // =========================
 
   Widget _buildMobileLayout(BuildContext context) {
     return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        maxWidth: 500,
+      ),
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 25,
             offset: const Offset(0, 10),
           ),
@@ -535,8 +542,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ? const SizedBox(
                     width: 22,
                     height: 22,
-                    child:
-                        CircularProgressIndicator(
+                    child: CircularProgressIndicator(
                       strokeWidth: 2.5,
                       valueColor:
                           AlwaysStoppedAnimation<Color>(
@@ -568,11 +574,11 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(height: 18),
 
         // SECURITY NOTE
-        Center(
+        const Center(
           child: Row(
             mainAxisAlignment:
                 MainAxisAlignment.center,
-            children: const [
+            children: [
               Icon(
                 Icons.shield_outlined,
                 size: 14,

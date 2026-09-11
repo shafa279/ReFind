@@ -51,8 +51,16 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       _isLoading = false;
     });
 
-    if (item != null && _isReporter()) {
-      await _loadClaims();
+    if (item != null) {
+      debugPrint(
+        'ITEM DETAILS: id=${item['id']} '
+        'reporter_id=${item['reporter_id']} '
+        'item_type=${item['item_type']}',
+      );
+
+      if (_isReporter()) {
+        await _loadClaims();
+      }
     }
   }
 
@@ -61,10 +69,15 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   // =========================================================
 
   bool _isReporter() {
-    final currentUser = AuthService.userId;
-    final reporterId = _item?['reporter_id']?.toString();
+    final currentUser = AuthService.userId?.trim();
+    final reporterId =
+        _item?['reporter_id']?.toString().trim();
+
+    debugPrint('CURRENT USER: $currentUser');
+    debugPrint('ITEM REPORTER: $reporterId');
 
     if (currentUser == null ||
+        currentUser.isEmpty ||
         reporterId == null ||
         reporterId.isEmpty) {
       return false;
@@ -99,21 +112,26 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   // =========================================================
 
   Future<Map<String, dynamic>?> _getMyPendingClaim() async {
-    final userId = AuthService.userId;
+    final userId = AuthService.userId?.trim();
 
-    if (userId == null) {
+    if (userId == null || userId.isEmpty) {
       return null;
     }
 
     final claims = await ApiService.getClaims(widget.itemId);
 
     for (final claim in claims) {
-      final claimMap = Map<String, dynamic>.from(claim);
+      final claimMap =
+          Map<String, dynamic>.from(claim);
 
-      final claimantId = claimMap['claimant_id']?.toString();
-      final status = claimMap['status']?.toString();
+      final claimantId =
+          claimMap['claimant_id']?.toString().trim();
 
-      if (claimantId == userId && status == 'Pending') {
+      final status =
+          claimMap['status']?.toString();
+
+      if (claimantId == userId &&
+          status == 'Pending') {
         return claimMap;
       }
     }
@@ -126,9 +144,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   // =========================================================
 
   Future<void> _claimItem() async {
-    final claimantId = AuthService.userId;
+    final claimantId =
+        AuthService.userId?.trim();
 
-    if (claimantId == null) {
+    if (claimantId == null ||
+        claimantId.isEmpty) {
       _showMessage(
         'Please log in before claiming an item.',
       );
@@ -139,9 +159,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       return;
     }
 
-    final reporterId = _item!['reporter_id']?.toString();
+    final reporterId =
+        _item!['reporter_id']?.toString().trim();
 
-    if (reporterId == null || reporterId.isEmpty) {
+    if (reporterId == null ||
+        reporterId.isEmpty) {
       _showMessage(
         'Unable to identify the item reporter.',
       );
@@ -174,7 +196,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     });
 
     _showMessage(
-      result['message'] ?? 'Claim request submitted.',
+      result['message'] ??
+          'Claim request submitted.',
     );
 
     if (result['success'] == true) {
@@ -222,7 +245,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 width: 500,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Enter private identifying details that only the real owner should know.',
@@ -234,10 +258,12 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                     TextField(
                       controller: controller,
                       maxLines: 5,
-                      decoration: const InputDecoration(
+                      decoration:
+                          const InputDecoration(
                         hintText:
                             'Example: colour, brand, scratches, sticker, engraving, unique mark...',
-                        border: OutlineInputBorder(),
+                        border:
+                            OutlineInputBorder(),
                       ),
                     ),
                   ],
@@ -248,9 +274,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   onPressed: submitting
                       ? null
                       : () {
-                          Navigator.pop(dialogContext);
+                          Navigator.pop(
+                            dialogContext,
+                          );
                         },
-                  child: const Text('Cancel'),
+                  child: const Text(
+                    'Cancel',
+                  ),
                 ),
                 ElevatedButton(
                   onPressed: submitting
@@ -260,7 +290,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                               controller.text.trim();
 
                           if (details.isEmpty) {
-                            if (!dialogBuildContext.mounted) {
+                            if (!dialogBuildContext
+                                .mounted) {
                               return;
                             }
 
@@ -281,22 +312,22 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                           });
 
                           final result =
-                              await ApiService.submitVerification(
+                              await ApiService
+                                  .submitVerification(
                             claimId: claimId,
-                            verificationDetails: details,
+                            verificationDetails:
+                                details,
                           );
 
-                          // IMPORTANT:
-                          // dialogBuildContext belongs to the dialog,
-                          // so guard that exact BuildContext after await.
-                          if (!dialogBuildContext.mounted) {
+                          if (!dialogBuildContext
+                              .mounted) {
                             return;
                           }
 
-                          Navigator.pop(dialogBuildContext);
+                          Navigator.pop(
+                            dialogBuildContext,
+                          );
 
-                          // The dialog is now closed.
-                          // Guard the State before using its context.
                           if (!mounted) return;
 
                           _showMessage(
@@ -304,7 +335,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                 'Verification submitted.',
                           );
 
-                          if (result['success'] == true) {
+                          if (result['success'] ==
+                              true) {
                             await _loadItem();
                           }
                         },
@@ -312,7 +344,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(
+                          child:
+                              CircularProgressIndicator(
                             strokeWidth: 2,
                           ),
                         )
@@ -338,7 +371,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     Map<String, dynamic> claim,
   ) async {
     final claimantId =
-        claim['claimant_id']?.toString() ?? 'Unknown';
+        claim['claimant_id']?.toString() ??
+            'Unknown';
 
     final claimId = int.tryParse(
       claim['id']?.toString() ??
@@ -347,11 +381,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     );
 
     final verificationId = int.tryParse(
-      claim['verification_id']?.toString() ?? '',
+      claim['verification_id']?.toString() ??
+          '',
     );
 
     final verificationStatus =
-        claim['verification_status']?.toString() ?? 'Pending';
+        claim['verification_status']?.toString() ??
+            'Pending';
 
     if (claimId == null) {
       _showMessage(
@@ -378,9 +414,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(dialogContext);
+                  Navigator.pop(
+                    dialogContext,
+                  );
                 },
-                child: const Text('Close'),
+                child: const Text(
+                  'Close',
+                ),
               ),
             ],
           );
@@ -402,7 +442,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     if (!mounted) return;
 
     final details =
-        verification?['verification_details']?.toString() ??
+        verification?[
+                'verification_details']
+            ?.toString() ??
             'No verification details available.';
 
     final status =
@@ -420,7 +462,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             width: 550,
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 Text(
                   'Claimant: $claimantId',
@@ -446,10 +489,12 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 const SizedBox(height: 8),
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF5F4FA),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius:
+                        BorderRadius.circular(12),
                   ),
                   child: Text(
                     details,
@@ -466,18 +511,25 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               onPressed: _isReviewing
                   ? null
                   : () {
-                      Navigator.pop(dialogContext);
+                      Navigator.pop(
+                        dialogContext,
+                      );
                     },
-              child: const Text('Close'),
+              child: const Text(
+                'Close',
+              ),
             ),
             TextButton(
               onPressed: _isReviewing
                   ? null
                   : () async {
-                      Navigator.pop(dialogContext);
+                      Navigator.pop(
+                        dialogContext,
+                      );
 
                       await _makeDecision(
-                        verificationId: verificationId,
+                        verificationId:
+                            verificationId,
                         decision: 'Rejected',
                       );
                     },
@@ -492,10 +544,13 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               onPressed: _isReviewing
                   ? null
                   : () async {
-                      Navigator.pop(dialogContext);
+                      Navigator.pop(
+                        dialogContext,
+                      );
 
                       await _makeDecision(
-                        verificationId: verificationId,
+                        verificationId:
+                            verificationId,
                         decision: 'Approved',
                       );
                     },
@@ -517,9 +572,11 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     required int verificationId,
     required String decision,
   }) async {
-    final reviewerId = AuthService.userId;
+    final reviewerId =
+        AuthService.userId?.trim();
 
-    if (reviewerId == null) {
+    if (reviewerId == null ||
+        reviewerId.isEmpty) {
       _showMessage(
         'Please log in again.',
       );
@@ -555,8 +612,6 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           'Verification approved and item resolved successfully.',
         );
 
-        // Backend deletes the item after approval.
-        // Therefore, do NOT reload the item.
         if (!mounted) return;
 
         Navigator.pop(context);
@@ -580,7 +635,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     // =======================================================
 
     _showMessage(
-      result['message'] ?? 'Review failed.',
+      result['message'] ??
+          'Review failed.',
     );
   }
 
@@ -613,7 +669,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             : _item == null
                 ? _buildError()
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding:
+                        const EdgeInsets.all(24),
                     child: _buildContent(),
                   ),
       ),
@@ -628,36 +685,44 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
     final item = _item!;
 
     final itemName =
-        item['item_name']?.toString() ?? 'Unknown item';
+        item['item_name']?.toString() ??
+            'Unknown item';
 
     final category =
-        item['category']?.toString() ?? 'Unknown category';
+        item['category']?.toString() ??
+            'Unknown category';
 
     final location =
-        item['location']?.toString() ?? 'Unknown location';
+        item['location']?.toString() ??
+            'Unknown location';
 
     final date =
-        item['date']?.toString() ?? 'Unknown date';
+        item['date']?.toString() ??
+            'Unknown date';
 
     final time =
-        item['time']?.toString() ?? 'Unknown time';
+        item['time']?.toString() ??
+            'Unknown time';
 
     final publicDetails =
         item['public_details']?.toString() ??
             'No public details available.';
 
     final status =
-        item['status']?.toString() ?? 'Searching';
+        item['status']?.toString() ??
+            'Searching';
 
     final isReporter = _isReporter();
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
+        constraints:
+            const BoxConstraints(
           maxWidth: 900,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
             TextButton.icon(
               onPressed: () {
@@ -666,7 +731,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
               icon: const Icon(
                 Icons.arrow_back_rounded,
               ),
-              label: const Text('Back'),
+              label: const Text(
+                'Back',
+              ),
             ),
             const SizedBox(height: 20),
             const Text(
@@ -685,85 +752,118 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding:
+                  const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
+                borderRadius:
+                    BorderRadius.circular(22),
                 border: Border.all(
                   color: const Color(0xFFE8E9F0),
                 ),
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Container(
                     width: double.infinity,
                     height: 280,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0F1F6),
-                      borderRadius: BorderRadius.circular(18),
+                    decoration:
+                        BoxDecoration(
+                      color:
+                          const Color(0xFFF0F1F6),
+                      borderRadius:
+                          BorderRadius.circular(18),
                     ),
                     child: const Center(
                       child: Icon(
                         Icons.image_outlined,
                         size: 60,
-                        color: Color(0xFF9A9CAB),
+                        color:
+                            Color(0xFF9A9CAB),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 25),
+                  const SizedBox(
+                    height: 25,
+                  ),
                   Text(
                     itemName,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 27,
-                      fontWeight: FontWeight.w900,
+                      fontWeight:
+                          FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     category,
-                    style: const TextStyle(
-                      color: Color(0xFF686B78),
+                    style:
+                        const TextStyle(
+                      color:
+                          Color(0xFF686B78),
                     ),
                   ),
-                  const SizedBox(height: 25),
+                  const SizedBox(
+                    height: 25,
+                  ),
                   _DetailRow(
-                    icon: Icons.location_on_outlined,
+                    icon: Icons
+                        .location_on_outlined,
                     title: 'Location',
                     value: location,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 14,
+                  ),
                   _DetailRow(
-                    icon: Icons.calendar_today_outlined,
+                    icon: Icons
+                        .calendar_today_outlined,
                     title: 'Date',
                     value: date,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 14,
+                  ),
                   _DetailRow(
-                    icon: Icons.access_time_outlined,
-                    title: 'Approximate Time',
+                    icon: Icons
+                        .access_time_outlined,
+                    title:
+                        'Approximate Time',
                     value: time,
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 14,
+                  ),
                   _DetailRow(
-                    icon: Icons.info_outline_rounded,
+                    icon: Icons
+                        .info_outline_rounded,
                     title: 'Status',
                     value: status,
                   ),
-                  const SizedBox(height: 25),
+                  const SizedBox(
+                    height: 25,
+                  ),
                   const Text(
                     'Public Details',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.w800,
+                      fontWeight:
+                          FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(
+                    height: 10,
+                  ),
                   Text(
                     publicDetails,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       height: 1.5,
-                      color: Color(0xFF686B78),
+                      color:
+                          Color(0xFF686B78),
                     ),
                   ),
                 ],
@@ -778,17 +878,23 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding:
+                  const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFFEDEBFF),
-                borderRadius: BorderRadius.circular(18),
+                color:
+                    const Color(0xFFEDEBFF),
+                borderRadius:
+                    BorderRadius.circular(18),
               ),
               child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Color(0xFF6C4EFF),
+                    Icons
+                        .auto_awesome_rounded,
+                    color:
+                        Color(0xFF6C4EFF),
                   ),
                   SizedBox(width: 12),
                   Expanded(
@@ -800,7 +906,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                           'Potential Match',
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight: FontWeight.w800,
+                            fontWeight:
+                                FontWeight.w800,
                           ),
                         ),
                         SizedBox(height: 7),
@@ -808,7 +915,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                           'ReFind identified this as a possible match. A match score is not proof of ownership.',
                           style: TextStyle(
                             height: 1.5,
-                            color: Color(0xFF686B78),
+                            color:
+                                Color(0xFF686B78),
                           ),
                         ),
                       ],
@@ -826,27 +934,33 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding:
+                  const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius:
+                    BorderRadius.circular(18),
                 border: Border.all(
-                  color: const Color(0xFFE8E9F0),
+                  color:
+                      const Color(0xFFE8E9F0),
                 ),
               ),
               child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
                 children: [
                   Icon(
                     Icons.lock_outline_rounded,
-                    color: Color(0xFF6C4EFF),
+                    color:
+                        Color(0xFF6C4EFF),
                   ),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       'Private identifying details remain hidden and are only used during ownership verification.',
                       style: TextStyle(
-                        color: Color(0xFF686B78),
+                        color:
+                            Color(0xFF686B78),
                         height: 1.5,
                       ),
                     ),
@@ -856,6 +970,10 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             ),
 
             const SizedBox(height: 25),
+
+            // =================================================
+            // REPORTER / CLAIMANT
+            // =================================================
 
             if (isReporter)
               _buildReporterSection()
@@ -886,7 +1004,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 ConnectionState.waiting &&
             !snapshot.hasData) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child:
+                CircularProgressIndicator(),
           );
         }
 
@@ -897,29 +1016,37 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         if (claim != null) {
           return Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(22),
+            padding:
+                const EdgeInsets.all(22),
             decoration: BoxDecoration(
-              color: const Color(0xFFF4F1FF),
-              borderRadius: BorderRadius.circular(20),
+              color:
+                  const Color(0xFFF4F1FF),
+              borderRadius:
+                  BorderRadius.circular(20),
               border: Border.all(
-                color: const Color(0xFFE1DBFF),
+                color:
+                    const Color(0xFFE1DBFF),
               ),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
                     Icon(
-                      Icons.pending_actions_outlined,
-                      color: Color(0xFF6C4EFF),
+                      Icons
+                          .pending_actions_outlined,
+                      color:
+                          Color(0xFF6C4EFF),
                     ),
                     SizedBox(width: 10),
                     Text(
                       'Claim Request Submitted',
                       style: TextStyle(
                         fontSize: 18,
-                        fontWeight: FontWeight.w800,
+                        fontWeight:
+                            FontWeight.w800,
                       ),
                     ),
                   ],
@@ -929,18 +1056,23 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                   'Your claim has been submitted. Complete ownership verification using private identifying details.',
                   style: TextStyle(
                     height: 1.5,
-                    color: Color(0xFF686B78),
+                    color:
+                        Color(0xFF686B78),
                   ),
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    text: 'Verify Ownership',
-                    icon: Icons.verified_user_outlined,
+                    text:
+                        'Verify Ownership',
+                    icon: Icons
+                        .verified_user_outlined,
                     fullWidth: true,
                     onPressed: () {
-                      _submitVerification(claim);
+                      _submitVerification(
+                        claim,
+                      );
                     },
                   ),
                 ),
@@ -959,7 +1091,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             text: _isClaiming
                 ? 'Submitting Claim...'
                 : 'Claim This Item',
-            icon: Icons.assignment_turned_in_outlined,
+            icon: Icons
+                .assignment_turned_in_outlined,
             fullWidth: true,
             onPressed: () {
               if (!_isClaiming) {
@@ -979,29 +1112,37 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   Widget _buildReporterSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding:
+          const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: const Color(0xFFF4F1FF),
-        borderRadius: BorderRadius.circular(20),
+        color:
+            const Color(0xFFF4F1FF),
+        borderRadius:
+            BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFE1DBFF),
+          color:
+              const Color(0xFFE1DBFF),
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           const Row(
             children: [
               Icon(
-                Icons.notifications_active_outlined,
-                color: Color(0xFF6C4EFF),
+                Icons
+                    .notifications_active_outlined,
+                color:
+                    Color(0xFF6C4EFF),
               ),
               SizedBox(width: 10),
               Text(
                 'Claim Requests',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight: FontWeight.w800,
+                  fontWeight:
+                      FontWeight.w800,
                 ),
               ),
             ],
@@ -1010,37 +1151,46 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           const Text(
             'People claiming this item will appear here.',
             style: TextStyle(
-              color: Color(0xFF686B78),
+              color:
+                  Color(0xFF686B78),
             ),
           ),
           const SizedBox(height: 15),
           if (_isLoadingClaims)
             const Center(
-              child: CircularProgressIndicator(),
+              child:
+                  CircularProgressIndicator(),
             )
           else if (_claims.isEmpty)
             const Text(
               'No claim requests yet.',
               style: TextStyle(
-                color: Color(0xFF686B78),
+                color:
+                    Color(0xFF686B78),
               ),
             )
           else
             ..._claims.map(
               (claim) {
                 final claimMap =
-                    Map<String, dynamic>.from(claim);
+                    Map<String, dynamic>
+                        .from(claim);
 
                 final claimant =
-                    claimMap['claimant_id']?.toString() ??
+                    claimMap[
+                                'claimant_id']
+                            ?.toString() ??
                         'Unknown';
 
                 final status =
-                    claimMap['status']?.toString() ??
+                    claimMap['status']
+                            ?.toString() ??
                         'Pending';
 
                 final verificationId =
-                    claimMap['verification_id']?.toString();
+                    claimMap[
+                            'verification_id']
+                        ?.toString();
 
                 final hasVerification =
                     verificationId != null &&
@@ -1048,43 +1198,67 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
 
                 return Container(
                   width: double.infinity,
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
+                  margin:
+                      const EdgeInsets.only(
+                    top: 12,
+                  ),
+                  padding:
+                      const EdgeInsets.all(16),
+                  decoration:
+                      BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius:
+                        BorderRadius.circular(
+                      14,
+                    ),
                   ),
                   child: Column(
                     crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        CrossAxisAlignment
+                            .start,
                     children: [
                       Text(
                         'Claim from $claimant',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
+                        style:
+                            const TextStyle(
+                          fontWeight:
+                              FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(
+                        height: 6,
+                      ),
                       Text(
                         'Status: $status',
-                        style: const TextStyle(
-                          color: Color(0xFF686B78),
+                        style:
+                            const TextStyle(
+                          color:
+                              Color(0xFF686B78),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(
+                        height: 12,
+                      ),
                       SizedBox(
-                        width: double.infinity,
-                        child: PrimaryButton(
-                          text: hasVerification
-                              ? 'Review Claim'
-                              : 'Verification Pending',
+                        width:
+                            double.infinity,
+                        child:
+                            PrimaryButton(
+                          text:
+                              hasVerification
+                                  ? 'Review Claim'
+                                  : 'Verification Pending',
                           icon: hasVerification
-                              ? Icons.verified_user_outlined
-                              : Icons.hourglass_empty,
+                              ? Icons
+                                  .verified_user_outlined
+                              : Icons
+                                  .hourglass_empty,
                           fullWidth: true,
                           onPressed: () {
                             if (hasVerification) {
-                              _reviewClaim(claimMap);
+                              _reviewClaim(
+                                claimMap,
+                              );
                             }
                           },
                         ),
@@ -1106,7 +1280,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   Widget _buildError() {
     return Center(
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize:
+            MainAxisSize.min,
         children: [
           const Icon(
             Icons.error_outline_rounded,
@@ -1117,7 +1292,8 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
             'Unable to load item.',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w700,
+              fontWeight:
+                  FontWeight.w700,
             ),
           ),
           const SizedBox(height: 15),
@@ -1151,12 +1327,14 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.start,
       children: [
         Icon(
           icon,
           size: 20,
-          color: const Color(0xFF686B78),
+          color:
+              const Color(0xFF686B78),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -1165,15 +1343,20 @@ class _DetailRow extends StatelessWidget {
               children: [
                 TextSpan(
                   text: '$title: ',
-                  style: const TextStyle(
-                    color: Color(0xFF171A2B),
-                    fontWeight: FontWeight.w700,
+                  style:
+                      const TextStyle(
+                    color:
+                        Color(0xFF171A2B),
+                    fontWeight:
+                        FontWeight.w700,
                   ),
                 ),
                 TextSpan(
                   text: value,
-                  style: const TextStyle(
-                    color: Color(0xFF686B78),
+                  style:
+                      const TextStyle(
+                    color:
+                        Color(0xFF686B78),
                   ),
                 ),
               ],

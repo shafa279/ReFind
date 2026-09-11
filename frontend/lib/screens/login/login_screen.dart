@@ -127,6 +127,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
+
+      // =========================
+      // BACK TO HOME
+      // =========================
+
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF7F8FC),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Color(0xFF171717),
+          ),
+          onPressed: _isLoading
+              ? null
+              : () {
+                  Navigator.pop(context);
+                },
+        ),
+      ),
+
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(

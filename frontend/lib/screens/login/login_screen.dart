@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
   // =========================
 
   Future<void> _login() async {
-    // Check if fields are empty
     if (_collegeIdController.text.trim().isEmpty ||
         _passwordController.text.isEmpty) {
       _showMessage(
@@ -46,7 +45,6 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Send login request through ApiService
       final data = await ApiService.login(
         _collegeIdController.text.trim(),
         _passwordController.text,
@@ -54,19 +52,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // =========================
-      // LOGIN SUCCESS
-      // =========================
-
       if (data['success'] == true) {
         final String userId =
             data['user_id']?.toString() ??
-            _collegeIdController.text.trim();
+                _collegeIdController.text.trim();
 
         final String role =
             data['role']?.toString() ?? 'student';
 
-        // Save logged-in user
         AuthService.setUser(
           id: userId,
           userRole: role,
@@ -76,41 +69,24 @@ class _LoginScreenState extends State<LoginScreen> {
           'Login successful! Welcome $userId.',
         );
 
-        // Give the SnackBar a moment to appear
         await Future.delayed(
           const Duration(milliseconds: 400),
         );
 
         if (!mounted) return;
 
-        // =========================
-        // ADMIN
-        // =========================
-
         if (role == 'admin') {
           Navigator.pushReplacementNamed(
             context,
             '/admin',
           );
-        }
-
-        // =========================
-        // STUDENT
-        // =========================
-
-        else {
+        } else {
           Navigator.pushReplacementNamed(
             context,
             '/',
           );
         }
-      }
-
-      // =========================
-      // LOGIN FAILED
-      // =========================
-
-      else {
+      } else {
         _showMessage(
           data['message'] ??
               'Invalid College ID or password.',
@@ -146,357 +122,479 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 800;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 32,
-            ),
+            padding: const EdgeInsets.all(24),
             child: ConstrainedBox(
               constraints: const BoxConstraints(
-                maxWidth: 450,
+                maxWidth: 1050,
+              ),
+              child: isMobile
+                  ? _buildMobileLayout(context)
+                  : _buildDesktopLayout(context),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // =========================
+  // DESKTOP LAYOUT
+  // =========================
+
+  Widget _buildDesktopLayout(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(
+        minHeight: 560,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 30,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          // =========================
+          // LEFT BLUE SECTION
+          // =========================
+
+          Expanded(
+            flex: 5,
+            child: Container(
+              padding: const EdgeInsets.all(48),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF101936),
+                    Color(0xFF193B86),
+                    Color(0xFF2864C7),
+                  ],
+                ),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // =========================
                   // LOGO
-                  // =========================
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2463D4),
+                          borderRadius:
+                              BorderRadius.circular(11),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_outward_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 11),
+                      const Text(
+                        'ReFind',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
 
+                  const Spacer(),
+
+                  // BADGE
                   Container(
-                    width: 72,
-                    height: 72,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 13,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4F46E5),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius:
+                          BorderRadius.circular(30),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.15),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.search_rounded,
+                    child: const Text(
+                      'SMART CAMPUS LOST & FOUND',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  // MAIN HEADING
+                  const Text(
+                    'Lost things deserve\na way home.',
+                    style: TextStyle(
                       color: Colors.white,
-                      size: 38,
+                      fontSize: 38,
+                      height: 1.12,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
 
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
 
-                  // =========================
-                  // TITLE
-                  // =========================
-
+                  // DESCRIPTION
                   const Text(
-                    'Welcome to ReFind',
-                    textAlign: TextAlign.center,
+                    'Log in to manage your reports, '
+                    'review potential matches, and '
+                    'reclaim what belongs to you.',
                     style: TextStyle(
-                      fontSize: 30,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF171717),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  const Text(
-                    'Find it. Verify it. Reclaim it.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
+                      color: Colors.white70,
                       fontSize: 15,
-                      color: Color(0xFF6B7280),
+                      height: 1.6,
                     ),
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 35),
 
-                  // =========================
-                  // LOGIN CARD
-                  // =========================
-
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(28),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(
-                            alpha: 0.06,
-                          ),
-                          blurRadius: 25,
-                          offset: const Offset(0, 10),
+                  // PRIVATE DETAILS
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.1),
+                          borderRadius:
+                              BorderRadius.circular(10),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        // =========================
-                        // LOGIN TITLE
-                        // =========================
-
-                        const Text(
-                          'Login',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF171717),
-                          ),
+                        child: const Icon(
+                          Icons.lock_outline_rounded,
+                          color: Colors.white70,
+                          size: 17,
                         ),
-
-                        const SizedBox(height: 8),
-
-                        const Text(
-                          'Use your College ID to continue.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF6B7280),
-                          ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Private details help verify ownership.',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
                         ),
-
-                        const SizedBox(height: 28),
-
-                        // =========================
-                        // COLLEGE ID
-                        // =========================
-
-                        const Text(
-                          'College ID',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF374151),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        TextField(
-                          controller: _collegeIdController,
-                          textInputAction:
-                              TextInputAction.next,
-                          textCapitalization:
-                              TextCapitalization.characters,
-                          enabled: !_isLoading,
-                          decoration: InputDecoration(
-                            hintText: 'Enter your College ID',
-                            prefixIcon: const Icon(
-                              Icons.badge_outlined,
-                            ),
-                            filled: true,
-                            fillColor:
-                                const Color(0xFFF9FAFB),
-                            border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-                            enabledBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFFE5E7EB),
-                              ),
-                            ),
-                            focusedBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFF4F46E5),
-                                width: 1.5,
-                              ),
-                            ),
-                            disabledBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFFE5E7EB),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // =========================
-                        // PASSWORD
-                        // =========================
-
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF374151),
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          textInputAction:
-                              TextInputAction.done,
-                          enabled: !_isLoading,
-                          onSubmitted: (_) {
-                            if (!_isLoading) {
-                              _login();
-                            }
-                          },
-                          decoration: InputDecoration(
-                            hintText: 'Enter your password',
-
-                            prefixIcon: const Icon(
-                              Icons.lock_outline_rounded,
-                            ),
-
-                            suffixIcon: IconButton(
-                              onPressed: _isLoading
-                                  ? null
-                                  : () {
-                                      setState(() {
-                                        _obscurePassword =
-                                            !_obscurePassword;
-                                      });
-                                    },
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_outlined
-                                    : Icons.visibility_off_outlined,
-                              ),
-                            ),
-
-                            filled: true,
-                            fillColor:
-                                const Color(0xFFF9FAFB),
-
-                            border: OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide: BorderSide.none,
-                            ),
-
-                            enabledBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFFE5E7EB),
-                              ),
-                            ),
-
-                            focusedBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFF4F46E5),
-                                width: 1.5,
-                              ),
-                            ),
-
-                            disabledBorder:
-                                OutlineInputBorder(
-                              borderRadius:
-                                  BorderRadius.circular(14),
-                              borderSide:
-                                  const BorderSide(
-                                color: Color(0xFFE5E7EB),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // =========================
-                        // LOGIN BUTTON
-                        // =========================
-
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: _isLoading
-                                ? null
-                                : () => _login(),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFF4F46E5),
-                              foregroundColor:
-                                  Colors.white,
-                              disabledBackgroundColor:
-                                  const Color(0xFFA5B4FC),
-                              elevation: 0,
-                              shape:
-                                  RoundedRectangleBorder(
-                                borderRadius:
-                                    BorderRadius.circular(14),
-                              ),
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    width: 22,
-                                    height: 22,
-                                    child:
-                                        CircularProgressIndicator(
-                                      strokeWidth: 2.5,
-                                      valueColor:
-                                          AlwaysStoppedAnimation<
-                                              Color>(
-                                        Colors.white,
-                                      ),
-                                    ),
-                                  )
-                                : const Text(
-                                    'Login',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight:
-                                          FontWeight.w600,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  SizedBox(
-                    height: size.height < 700
-                        ? 16
-                        : 32,
-                  ),
-
-                  // =========================
-                  // FOOTER
-                  // =========================
-
-                  const Text(
-                    'ReFind • College Lost & Found',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF9CA3AF),
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-        ),
+
+          // =========================
+          // RIGHT LOGIN SECTION
+          // =========================
+
+          Expanded(
+            flex: 5,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 55,
+                vertical: 55,
+              ),
+              color: Colors.white,
+              child: _buildLoginForm(context),
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  // =========================
+  // MOBILE LAYOUT
+  // =========================
+
+  Widget _buildMobileLayout(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: _buildLoginForm(context),
+    );
+  }
+
+  // =========================
+  // LOGIN FORM
+  // =========================
+
+  Widget _buildLoginForm(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Welcome back',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF171717),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        const Text(
+          'Log in to continue to ReFind.',
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF6B7280),
+          ),
+        ),
+
+        const SizedBox(height: 32),
+
+        // COLLEGE ID
+        const Text(
+          'College ID',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        TextField(
+          controller: _collegeIdController,
+          textInputAction: TextInputAction.next,
+          textCapitalization:
+              TextCapitalization.characters,
+          enabled: !_isLoading,
+          decoration: InputDecoration(
+            hintText: 'Enter your College ID',
+            prefixIcon: const Icon(
+              Icons.badge_outlined,
+              size: 20,
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(
+                color: Color(0xFFE5E7EB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(
+                color: Color(0xFF2457B8),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // PASSWORD
+        const Text(
+          'Password',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF374151),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        TextField(
+          controller: _passwordController,
+          obscureText: _obscurePassword,
+          textInputAction: TextInputAction.done,
+          enabled: !_isLoading,
+          onSubmitted: (_) {
+            if (!_isLoading) {
+              _login();
+            }
+          },
+          decoration: InputDecoration(
+            hintText: 'Enter your password',
+            prefixIcon: const Icon(
+              Icons.lock_outline_rounded,
+              size: 20,
+            ),
+            suffixIcon: IconButton(
+              onPressed: _isLoading
+                  ? null
+                  : () {
+                      setState(() {
+                        _obscurePassword =
+                            !_obscurePassword;
+                      });
+                    },
+              icon: Icon(
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
+              ),
+            ),
+            filled: true,
+            fillColor: const Color(0xFFF9FAFB),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(
+                color: Color(0xFFE5E7EB),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(13),
+              borderSide: const BorderSide(
+                color: Color(0xFF2457B8),
+                width: 1.5,
+              ),
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 28),
+
+        // LOGIN BUTTON
+        SizedBox(
+          width: double.infinity,
+          height: 52,
+          child: ElevatedButton(
+            onPressed: _isLoading ? null : _login,
+            style: ElevatedButton.styleFrom(
+              backgroundColor:
+                  const Color(0xFF2457B8),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  const Color(0xFF9DB7E5),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    BorderRadius.circular(13),
+              ),
+            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child:
+                        CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(
+                        Colors.white,
+                      ),
+                    ),
+                  )
+                : const Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Log In',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 18,
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+
+        const SizedBox(height: 18),
+
+        // SECURITY NOTE
+        Center(
+          child: Row(
+            mainAxisAlignment:
+                MainAxisAlignment.center,
+            children: const [
+              Icon(
+                Icons.shield_outlined,
+                size: 14,
+                color: Color(0xFF9CA3AF),
+              ),
+              SizedBox(width: 6),
+              Text(
+                'Your account information is kept secure.',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Color(0xFF9CA3AF),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 22),
+
+        // BACK TO HOME
+        Center(
+          child: TextButton.icon(
+            onPressed: () {
+              Navigator.pushReplacementNamed(
+                context,
+                '/',
+              );
+            },
+            icon: const Icon(
+              Icons.arrow_back_rounded,
+              size: 15,
+              color: Color(0xFF6B7280),
+            ),
+            label: const Text(
+              'Back to Home',
+              style: TextStyle(
+                color: Color(0xFF6B7280),
+                fontSize: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

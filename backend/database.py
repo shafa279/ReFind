@@ -22,6 +22,7 @@ def create_tables():
             time TEXT,
             public_details TEXT,
             private_details TEXT,
+            description TEXT,
             image_path TEXT,
             status TEXT DEFAULT 'Searching',
             reporter_id TEXT
@@ -86,10 +87,18 @@ def update_database():
 
     column_names = [column["name"] for column in columns]
 
+    # Add reporter_id to an existing database if missing
     if "reporter_id" not in column_names:
         connection.execute("""
             ALTER TABLE items
             ADD COLUMN reporter_id TEXT
+        """)
+
+    # Add description to an existing database if missing
+    if "description" not in column_names:
+        connection.execute("""
+            ALTER TABLE items
+            ADD COLUMN description TEXT
         """)
 
     connection.commit()

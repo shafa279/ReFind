@@ -1,8 +1,6 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
+import '../../services/api_service.dart';
 import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,15 +20,16 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  // Flask backend
-  static const String baseUrl = 'http://127.0.0.1:5000';
-
   @override
   void dispose() {
     _collegeIdController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
+
+  // =========================
+  // LOGIN
+  // =========================
 
   Future<void> _login() async {
     // Check if fields are empty
@@ -47,18 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/api/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'user_id': _collegeIdController.text.trim(),
-          'password': _passwordController.text,
-        }),
+      // Send login request through ApiService
+      final data = await ApiService.login(
+        _collegeIdController.text.trim(),
+        _passwordController.text,
       );
-
-      final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
@@ -66,11 +58,10 @@ class _LoginScreenState extends State<LoginScreen> {
       // LOGIN SUCCESS
       // =========================
 
-      if (response.statusCode == 200 &&
-          data['success'] == true) {
+      if (data['success'] == true) {
         final String userId =
             data['user_id']?.toString() ??
-                _collegeIdController.text.trim();
+            _collegeIdController.text.trim();
 
         final String role =
             data['role']?.toString() ?? 'student';
@@ -140,6 +131,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // =========================
+  // SHOW MESSAGE
+  // =========================
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -177,8 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     height: 72,
                     decoration: BoxDecoration(
                       color: const Color(0xFF4F46E5),
-                      borderRadius:
-                          BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Icon(
                       Icons.search_rounded,
@@ -225,12 +219,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     padding: const EdgeInsets.all(28),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius:
-                          BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
-                          color:
-                              Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(
+                            alpha: 0.06,
+                          ),
                           blurRadius: 25,
                           offset: const Offset(0, 10),
                         ),
@@ -240,6 +234,10 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment:
                           CrossAxisAlignment.start,
                       children: [
+                        // =========================
+                        // LOGIN TITLE
+                        // =========================
+
                         const Text(
                           'Login',
                           style: TextStyle(
@@ -277,15 +275,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
 
                         TextField(
-                          controller:
-                              _collegeIdController,
+                          controller: _collegeIdController,
                           textInputAction:
                               TextInputAction.next,
                           textCapitalization:
                               TextCapitalization.characters,
+                          enabled: !_isLoading,
                           decoration: InputDecoration(
-                            hintText:
-                                'Enter your College ID',
+                            hintText: 'Enter your College ID',
                             prefixIcon: const Icon(
                               Icons.badge_outlined,
                             ),
@@ -295,8 +292,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             border: OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(14),
-                              borderSide:
-                                  BorderSide.none,
+                              borderSide: BorderSide.none,
                             ),
                             enabledBorder:
                                 OutlineInputBorder(
@@ -304,8 +300,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   BorderRadius.circular(14),
                               borderSide:
                                   const BorderSide(
-                                color:
-                                    Color(0xFFE5E7EB),
+                                color: Color(0xFFE5E7EB),
                               ),
                             ),
                             focusedBorder:
@@ -314,9 +309,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   BorderRadius.circular(14),
                               borderSide:
                                   const BorderSide(
-                                color:
-                                    Color(0xFF4F46E5),
+                                color: Color(0xFF4F46E5),
                                 width: 1.5,
+                              ),
+                            ),
+                            disabledBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color: Color(0xFFE5E7EB),
                               ),
                             ),
                           ),
@@ -340,66 +343,77 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 8),
 
                         TextField(
-                          controller:
-                              _passwordController,
-                          obscureText:
-                              _obscurePassword,
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
                           textInputAction:
                               TextInputAction.done,
+                          enabled: !_isLoading,
                           onSubmitted: (_) {
                             if (!_isLoading) {
                               _login();
                             }
                           },
                           decoration: InputDecoration(
-                            hintText:
-                                'Enter your password',
+                            hintText: 'Enter your password',
+
                             prefixIcon: const Icon(
                               Icons.lock_outline_rounded,
                             ),
+
                             suffixIcon: IconButton(
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword =
-                                      !_obscurePassword;
-                                });
-                              },
+                              onPressed: _isLoading
+                                  ? null
+                                  : () {
+                                      setState(() {
+                                        _obscurePassword =
+                                            !_obscurePassword;
+                                      });
+                                    },
                               icon: Icon(
                                 _obscurePassword
-                                    ? Icons
-                                        .visibility_outlined
-                                    : Icons
-                                        .visibility_off_outlined,
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
                               ),
                             ),
+
                             filled: true,
                             fillColor:
                                 const Color(0xFFF9FAFB),
+
                             border: OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(14),
-                              borderSide:
-                                  BorderSide.none,
+                              borderSide: BorderSide.none,
                             ),
+
                             enabledBorder:
                                 OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(14),
                               borderSide:
                                   const BorderSide(
-                                color:
-                                    Color(0xFFE5E7EB),
+                                color: Color(0xFFE5E7EB),
                               ),
                             ),
+
                             focusedBorder:
                                 OutlineInputBorder(
                               borderRadius:
                                   BorderRadius.circular(14),
                               borderSide:
                                   const BorderSide(
-                                color:
-                                    Color(0xFF4F46E5),
+                                color: Color(0xFF4F46E5),
                                 width: 1.5,
+                              ),
+                            ),
+
+                            disabledBorder:
+                                OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.circular(14),
+                              borderSide:
+                                  const BorderSide(
+                                color: Color(0xFFE5E7EB),
                               ),
                             ),
                           ),
@@ -418,8 +432,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _isLoading
                                 ? null
                                 : () => _login(),
-                            style:
-                                ElevatedButton.styleFrom(
+                            style: ElevatedButton.styleFrom(
                               backgroundColor:
                                   const Color(0xFF4F46E5),
                               foregroundColor:
@@ -462,8 +475,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
 
                   SizedBox(
-                    height:
-                        size.height < 700 ? 16 : 32,
+                    height: size.height < 700
+                        ? 16
+                        : 32,
                   ),
 
                   // =========================

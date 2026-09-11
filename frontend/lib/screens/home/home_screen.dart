@@ -33,7 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    final notifications = await ApiService.getNotifications(userId);
+    final notifications =
+        await ApiService.getNotifications(userId);
 
     if (!mounted) return;
 
@@ -50,19 +51,25 @@ class _HomeScreenState extends State<HomeScreen> {
   // SHOW NOTIFICATIONS
   // =========================
 
-  Future<void> _showNotifications(BuildContext context) async {
+  Future<void> _showNotifications() async {
     final userId = AuthService.userId;
 
     if (userId == null) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please login to view notifications.'),
+          content: Text(
+            'Please login to view notifications.',
+          ),
         ),
       );
+
       return;
     }
 
-    final notifications = await ApiService.getNotifications(userId);
+    final notifications =
+        await ApiService.getNotifications(userId);
 
     if (!mounted) return;
 
@@ -72,7 +79,9 @@ class _HomeScreenState extends State<HomeScreen> {
       final notificationId = notification['id'];
 
       if (isUnread && notificationId != null) {
-        await ApiService.markNotificationAsRead(notificationId);
+        await ApiService.markNotificationAsRead(
+          notificationId,
+        );
       }
     }
 
@@ -81,6 +90,8 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       hasUnreadNotifications = false;
     });
+
+    if (!mounted) return;
 
     showDialog(
       context: context,
@@ -111,10 +122,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 : ListView.separated(
                     shrinkWrap: true,
                     itemCount: notifications.length,
-                    separatorBuilder: (_, __) =>
+                    separatorBuilder: (_, _) =>
                         const Divider(height: 20),
                     itemBuilder: (context, index) {
-                      final notification = notifications[index];
+                      final notification =
+                          notifications[index];
 
                       return ListTile(
                         contentPadding: EdgeInsets.zero,
@@ -123,10 +135,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 42,
                           decoration: BoxDecoration(
                             color: const Color(0xFFEDEBFF),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius:
+                                BorderRadius.circular(12),
                           ),
                           child: const Icon(
-                            Icons.notifications_none_rounded,
+                            Icons
+                                .notifications_none_rounded,
                             color: Color(0xFF6C4EFF),
                           ),
                         ),
@@ -137,18 +151,27 @@ class _HomeScreenState extends State<HomeScreen> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        subtitle: notification['created_at'] != null
-                            ? Padding(
-                                padding: const EdgeInsets.only(top: 5),
-                                child: Text(
-                                  notification['created_at'].toString(),
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF686B78),
-                                  ),
-                                ),
-                              )
-                            : null,
+                        subtitle:
+                            notification['created_at'] !=
+                                    null
+                                ? Padding(
+                                    padding:
+                                        const EdgeInsets.only(
+                                      top: 5,
+                                    ),
+                                    child: Text(
+                                      notification[
+                                              'created_at']
+                                          .toString(),
+                                      style:
+                                          const TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            Color(0xFF686B78),
+                                      ),
+                                    ),
+                                  )
+                                : null,
                       );
                     },
                   ),
@@ -168,7 +191,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth =
+        MediaQuery.of(context).size.width;
+
     final isMobile = screenWidth < 800;
 
     return Scaffold(
@@ -179,7 +204,10 @@ class _HomeScreenState extends State<HomeScreen> {
               currentPage: 'Home',
             ),
 
-            // Notification button
+            // =========================
+            // NOTIFICATION BUTTON
+            // =========================
+
             Align(
               alignment: Alignment.centerRight,
               child: Padding(
@@ -191,15 +219,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   clipBehavior: Clip.none,
                   children: [
                     IconButton(
-                      onPressed: () {
-                        _showNotifications(context);
-                      },
+                      onPressed: _showNotifications,
                       tooltip: 'Notifications',
                       icon: const Icon(
                         Icons.notifications_none_rounded,
                         color: Color(0xFF171A2B),
                       ),
                     ),
+
                     if (hasUnreadNotifications)
                       Positioned(
                         right: 7,
@@ -207,7 +234,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Container(
                           width: 10,
                           height: 10,
-                          decoration: const BoxDecoration(
+                          decoration:
+                              const BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
                           ),
@@ -218,12 +246,22 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
+            // =========================
+            // MAIN CONTENT
+            // =========================
+
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    _buildHero(context, isMobile),
-                    _buildFeatures(context, isMobile),
+                    _buildHero(
+                      context,
+                      isMobile,
+                    ),
+                    _buildFeatures(
+                      context,
+                      isMobile,
+                    ),
                     _buildFooter(),
                   ],
                 ),
@@ -235,7 +273,14 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHero(BuildContext context, bool isMobile) {
+  // =========================
+  // HERO SECTION
+  // =========================
+
+  Widget _buildHero(
+    BuildContext context,
+    bool isMobile,
+  ) {
     return Padding(
       padding: EdgeInsets.symmetric(
         horizontal: isMobile ? 24 : 80,
@@ -255,7 +300,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF0EBFF),
-                  borderRadius: BorderRadius.circular(30),
+                  borderRadius:
+                      BorderRadius.circular(30),
                 ),
                 child: const Text(
                   'SMART CAMPUS LOST & FOUND',
@@ -297,8 +343,9 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 18),
 
               const Text(
-                'Lost something on campus? Found something that isn\'t yours? '
-                'ReFind helps connect the two — simply, safely and intelligently.',
+                'Lost something on campus? Found something '
+                'that isn\'t yours? ReFind helps connect the '
+                'two — simply, safely and intelligently.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,
@@ -314,6 +361,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 spacing: 12,
                 runSpacing: 12,
                 children: [
+                  // LOST BUTTON
                   PrimaryButton(
                     text: 'I Lost Something',
                     icon: Icons.search_rounded,
@@ -321,7 +369,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ReportItemScreen(
+                          builder: (_) =>
+                              const ReportItemScreen(
                             initialIsLost: true,
                           ),
                         ),
@@ -329,12 +378,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
 
+                  // FOUND BUTTON
                   OutlinedButton.icon(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const ReportItemScreen(
+                          builder: (_) =>
+                              const ReportItemScreen(
                             initialIsLost: false,
                           ),
                         ),
@@ -356,6 +407,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // =========================
+  // FEATURES SECTION
+  // =========================
+
   Widget _buildFeatures(
     BuildContext context,
     bool isMobile,
@@ -365,19 +420,22 @@ class _HomeScreenState extends State<HomeScreen> {
         icon: Icons.auto_awesome_rounded,
         title: 'AI-Powered Matching',
         description:
-            'Smart matching helps identify possible connections between lost and found reports.',
+            'Smart matching helps identify possible '
+            'connections between lost and found reports.',
       ),
       const _FeatureData(
         icon: Icons.lock_outline_rounded,
         title: 'Private Verification',
         description:
-            'Private identifying details stay hidden and are only used during ownership verification.',
+            'Private identifying details stay hidden and '
+            'are only used during ownership verification.',
       ),
       const _FeatureData(
         icon: Icons.school_outlined,
         title: 'Built for Your Campus',
         description:
-            'A simple lost-and-found system designed specifically for your college community.',
+            'A simple lost-and-found system designed '
+            'specifically for your college community.',
       ),
     ];
 
@@ -397,13 +455,16 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Text(
                 'Why ReFind?',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium,
               ),
 
               const SizedBox(height: 10),
 
               const Text(
-                'Designed to make campus lost-and-found faster, safer and smarter.',
+                'Designed to make campus lost-and-found '
+                'faster, safer and smarter.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Color(0xFF686B78),
@@ -421,7 +482,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           .map(
                             (feature) => Padding(
                               padding:
-                                  const EdgeInsets.only(bottom: 16),
+                                  const EdgeInsets.only(
+                                bottom: 16,
+                              ),
                               child: _FeatureCard(
                                 feature: feature,
                               ),
@@ -458,6 +521,10 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+
+  // =========================
+  // FOOTER
+  // =========================
 
   Widget _buildFooter() {
     return Container(
@@ -530,14 +597,16 @@ class _FeatureCard extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
         children: [
           Container(
             width: 44,
             height: 44,
             decoration: BoxDecoration(
               color: const Color(0xFFF0EBFF),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius:
+                  BorderRadius.circular(12),
             ),
             child: Icon(
               feature.icon,

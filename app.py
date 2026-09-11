@@ -136,6 +136,10 @@ def report_item():
         'private_details'
     )
 
+    description = request.form.get(
+        'description'
+    )
+
     reporter_id = request.form.get(
         'reporter_id'
     )
@@ -152,6 +156,28 @@ def report_item():
             'success': False,
             'message': 'Required fields are missing'
         }), 400
+
+    # =====================================================
+    # LOST ITEM
+    # =====================================================
+
+    if item_type.lower() == 'lost':
+
+        # Lost description is stored separately.
+        # It is NOT stored in public_details.
+        public_details = ''
+        private_details = ''
+
+    # =====================================================
+    # FOUND ITEM
+    # =====================================================
+
+    else:
+
+        # Found items continue using the existing
+        # public_details and private_details fields.
+
+        description = ''
 
     image_path = None
 
@@ -190,12 +216,13 @@ def report_item():
                 time,
                 public_details,
                 private_details,
+                description,
                 image_path,
                 status,
                 reporter_id
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
 
         """, (
 
@@ -207,6 +234,7 @@ def report_item():
             time,
             public_details,
             private_details,
+            description,
             image_path,
             reporter_id
 
@@ -269,9 +297,23 @@ def legacy_report():
         'private_details'
     )
 
+    description = data.get(
+        'description'
+    )
+
     reporter_id = data.get(
         'reporter_id'
     )
+
+    # Keep the same Lost/Found behavior
+    if item_type and item_type.lower() == 'lost':
+
+        public_details = ''
+        private_details = ''
+
+    elif item_type:
+
+        description = ''
 
     connection = get_db_connection()
 
@@ -288,11 +330,12 @@ def legacy_report():
                 time,
                 public_details,
                 private_details,
+                description,
                 status,
                 reporter_id
             )
 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Searching', ?)
 
         """, (
 
@@ -304,6 +347,7 @@ def legacy_report():
             time,
             public_details,
             private_details,
+            description,
             reporter_id
 
         ))
@@ -680,14 +724,6 @@ def create_claim():
 
 # =========================================================
 # GET CLAIMS
-# =========================================================
-#
-# IMPORTANT:
-# This route now joins the claims table with the
-# verifications table.
-#
-# This allows Flutter to know whether verification
-# has been submitted and obtain the verification ID.
 # =========================================================
 
 @app.route(

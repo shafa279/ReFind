@@ -115,8 +115,7 @@ class ApiService {
 
       return {
         'success': data['success'] ?? false,
-        'message':
-            data['message'] ?? 'Report submission failed',
+        'message': data['message'] ?? 'Report submission failed',
         'item_id': data['item_id'],
       };
     } catch (e) {
@@ -170,8 +169,7 @@ class ApiService {
       final items = data['items'] ?? [];
 
       return items.where((item) {
-        return item['reporter_id']?.toString() ==
-            userId;
+        return item['reporter_id']?.toString() == userId;
       }).toList();
     } catch (e) {
       return [];
@@ -349,8 +347,7 @@ class ApiService {
         Uri.parse('$baseUrl/api/verification'),
         body: {
           'claim_id': claimId.toString(),
-          'verification_details':
-              verificationDetails,
+          'verification_details': verificationDetails,
         },
       );
 
@@ -358,17 +355,12 @@ class ApiService {
 
       return {
         'success': data['success'] ?? false,
-        'message':
-            data['message'] ??
-                'Verification submission failed',
-        'verification_id':
-            data['verification_id'],
+        'message': data['message'] ?? 'Verification submission failed',
+        'verification_id': data['verification_id'],
         'claim_id': data['claim_id'],
         'item_id': data['item_id'],
-        'reporter_id':
-            data['reporter_id'],
-        'claimant_id':
-            data['claimant_id'],
+        'reporter_id': data['reporter_id'],
+        'claimant_id': data['claimant_id'],
         'status': data['status'],
       };
     } catch (e) {
@@ -433,11 +425,8 @@ class ApiService {
 
       return {
         'success': data['success'] ?? false,
-        'message':
-            data['message'] ??
-                'Verification review failed',
-        'verification_id':
-            data['verification_id'],
+        'message': data['message'] ?? 'Verification review failed',
+        'verification_id': data['verification_id'],
         'claim_id': data['claim_id'],
         'item_id': data['item_id'],
         'decision': data['decision'],

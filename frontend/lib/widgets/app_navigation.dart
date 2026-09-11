@@ -1,22 +1,14 @@
-
 import 'package:flutter/material.dart';
 
 class AppNavigation extends StatelessWidget {
   final String currentPage;
 
-  const AppNavigation({
-    super.key,
-    this.currentPage = 'Home',
-  });
+  const AppNavigation({super.key, this.currentPage = 'Home'});
 
   void _navigate(BuildContext context, String page) {
     switch (page) {
       case 'Home':
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          '/',
-          (route) => false,
-        );
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
         break;
 
       case 'Matches':
@@ -51,11 +43,7 @@ class AppNavigation extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 40),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE8E9F0),
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFFE8E9F0))),
       ),
       child: Row(
         children: [
@@ -63,19 +51,7 @@ class AppNavigation extends StatelessWidget {
             onTap: () => _navigate(context, 'Home'),
             child: Row(
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0EBFF),
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF6C4EFF),
-                    size: 22,
-                  ),
-                ),
+                const ReFindLogo(size: 38),
                 const SizedBox(width: 10),
                 const Text(
                   'ReFind',
@@ -114,10 +90,7 @@ class AppNavigation extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF171A2B),
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -125,9 +98,7 @@ class AppNavigation extends StatelessWidget {
             ),
             child: const Text(
               'Login',
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-              ),
+              style: TextStyle(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -141,11 +112,7 @@ class AppNavigation extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFE8E9F0),
-          ),
-        ),
+        border: Border(bottom: BorderSide(color: Color(0xFFE8E9F0))),
       ),
       child: Row(
         children: [
@@ -153,19 +120,7 @@ class AppNavigation extends StatelessWidget {
             onTap: () => _navigate(context, 'Home'),
             child: Row(
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0EBFF),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(
-                    Icons.search_rounded,
-                    color: Color(0xFF6C4EFF),
-                    size: 20,
-                  ),
-                ),
+                const ReFindLogo(size: 34),
                 const SizedBox(width: 9),
                 const Text(
                   'ReFind',
@@ -182,30 +137,15 @@ class AppNavigation extends StatelessWidget {
           const Spacer(),
 
           PopupMenuButton<String>(
-            icon: const Icon(
-              Icons.menu_rounded,
-              color: Color(0xFF171A2B),
-            ),
+            icon: const Icon(Icons.menu_rounded, color: Color(0xFF171A2B)),
             onSelected: (page) {
               _navigate(context, page);
             },
             itemBuilder: (context) => const [
-              PopupMenuItem(
-                value: 'Home',
-                child: Text('Home'),
-              ),
-              PopupMenuItem(
-                value: 'Matches',
-                child: Text('Matches'),
-              ),
-              PopupMenuItem(
-                value: 'My Reports',
-                child: Text('My Reports'),
-              ),
-              PopupMenuItem(
-                value: 'Login',
-                child: Text('Login'),
-              ),
+              PopupMenuItem(value: 'Home', child: Text('Home')),
+              PopupMenuItem(value: 'Matches', child: Text('Matches')),
+              PopupMenuItem(value: 'My Reports', child: Text('My Reports')),
+              PopupMenuItem(value: 'Login', child: Text('Login')),
             ],
           ),
         ],
@@ -235,20 +175,83 @@ class _NavItem extends StatelessWidget {
           foregroundColor: isSelected
               ? const Color(0xFF6C4EFF)
               : const Color(0xFF686B78),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 10,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 14,
-            fontWeight: isSelected
-                ? FontWeight.w800
-                : FontWeight.w600,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The ReFind mark: a magnifying glass containing the green R/location pin.
+/// It is vector-based so it remains sharp on every screen size.
+class ReFindLogo extends StatelessWidget {
+  final double size;
+
+  const ReFindLogo({super.key, this.size = 40});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: size * .76,
+            height: size * .76,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F9F4),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFF20A66A),
+                width: size * .08,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                'R',
+                style: TextStyle(
+                  color: const Color(0xFF138C55),
+                  fontSize: size * .43,
+                  fontWeight: FontWeight.w900,
+                  height: 1,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: size * .02,
+            bottom: size * .02,
+            child: Transform.rotate(
+              angle: -.78,
+              child: Container(
+                width: size * .13,
+                height: size * .4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF20A66A),
+                  borderRadius: BorderRadius.circular(size),
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            right: size * .15,
+            top: size * .05,
+            child: Icon(
+              Icons.location_on_rounded,
+              color: const Color(0xFF20A66A),
+              size: size * .2,
+            ),
+          ),
+        ],
       ),
     );
   }
